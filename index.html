@@ -2502,62 +2502,54 @@ function startGame(){
     startBossMode();
     return;
   }
-if(curMode==='learn'){openLearnScreen();return;}
-  if(curMode==='boss'){startBossMode();return;}['startScreen','goScreen','settWrap','pauseOverlay'].forEach(id=>document.getElementById(id).classList.add('hidden'));stopBGM();board=newBoard();bag=[];nextQ=[];held=null;holdUsed=false;pops=[];particles=[];tspinPulse={active:false,age:0,cx:0,cy:0};score=0;lines=0;combo=-1;totalAtk=0;garbQ=0;tspinType='none';clearAnim=null;allClearFlash=0;lockFlash=0;lockImpact=null;comboBanner={val:0,age:0,maxAge:950};b2b=false;b2bCount=0;lockOn=false;lockTimer=0;lockMoves=0;gravAcc=0;softAcc=0;dasL=0;dasR=0;tDasL=0;tDasR=0;touchSoft=false;touchL=false;touchR=false;prevLevel=1;modeTimer=0;garbTimer=0;sprintDone=false;Object.keys(hk).forEach(k=>hk[k]=false);const md=MODES[curMode];level=md.diffFixed?parseInt(document.getElementById('diffSlider').value):1;if(curMode==='survival')level=3;if(curMode==='battle'){initAI();}fillNext();spawnNext();running=true;paused=false;lastTs=performance.now();cancelAnimationFrame(raf);document.getElementById('gearBtn').style.display='block';updateMusicBtn();updateHoldBtn();ac();resize();updateUI();doCountdown(()=>{lastTs=performance.now();raf=requestAnimationFrame(loop);if(bgmEnabled)startBGM();});}
-
-  window.addEventListener('beforeunload', () => {
-    if (bm.active && running) {
-      saveBossProgress();
-    }
-  });
-  window.addEventListener('pagehide', () => {
-    if (bm.active && running) {
-      saveBossProgress();
-    }
-  });
-
-window.addEventListener('DOMContentLoaded',()=>{
-  loadStore();
-  mainCvs=document.getElementById('mainCanvas');mainCtx=mainCvs.getContext('2d');
-  aiCvs=document.getElementById('aiCanvas');aiCtx=aiCvs.getContext('2d');
-  holdD=document.getElementById('holdD');holdDctx=holdD.getContext('2d');
-  holdBtl=document.getElementById('holdBtl');holdBtlCtx=holdBtl.getContext('2d');
-  holdP=document.getElementById('holdP');holdPctx=holdP.getContext('2d');
-  holdL=document.getElementById('holdL');holdLctx=holdL.getContext('2d');
-  nextD=document.getElementById('nextD');nextDctx=nextD.getContext('2d');
-  nextP=document.getElementById('nextP');nextPctx=nextP.getContext('2d');
-  nextL=document.getElementById('nextL');nextLctx=nextL.getContext('2d');
-  nextBtl=document.getElementById('nextBtl');nextBtlCtx=nextBtl.getContext('2d');
-  nextBossD=document.getElementById('nextBossD');if(nextBossD)nextBossDctx=nextBossD.getContext('2d');
-  initCanvasTouch();initCtrlBtns();
   
-  document.querySelectorAll('.mcard').forEach(card => {
-    card.onclick = function() {
-      document.querySelectorAll('.mcard').forEach(c => c.classList.remove('sel'));
-      this.classList.add('sel');
-      curMode = this.dataset.mode;
-      console.log("Mode selected:", curMode);
-      const dr = document.getElementById('diffRow');
-      if(dr) {
-        const md = MODES[curMode];
-        dr.style.display = (md && md.diffFixed && curMode !== 'boss') ? 'flex' : 'none';
-      }
-      updateBestDisplay();
-    };
+  if(curMode==='learn'){openLearnScreen();return;}
+  
+  ['startScreen','goScreen','settWrap','pauseOverlay'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  stopBGM();
+  board=newBoard();bag=[];nextQ=[];held=null;holdUsed=false;
+  pops=[];particles=[];tspinPulse={active:false,age:0,cx:0,cy:0};
+  score=0;lines=0;combo=-1;totalAtk=0;garbQ=0;tspinType='none';
+  clearAnim=null;allClearFlash=0;lockFlash=0;lockImpact=null;
+  comboBanner={val:0,age:0,maxAge:950};b2b=false;b2bCount=0;
+  lockOn=false;lockTimer=0;lockMoves=0;gravAcc=0;softAcc=0;
+  dasL=0;dasR=0;tDasL=0;tDasR=0;touchSoft=false;touchL=false;touchR=false;
+  prevLevel=1;modeTimer=0;garbTimer=0;sprintDone=false;
+  Object.keys(hk).forEach(k=>hk[k]=false);
+  
+  const md=MODES[curMode];
+  level=md.diffFixed?parseInt(document.getElementById('diffSlider').value):1;
+  if(curMode==='survival')level=3;
+  if(curMode==='battle'){initAI();}
+  
+  fillNext();
+  spawnNext();
+  running=true;
+  paused=false;
+  lastTs=performance.now();
+  cancelAnimationFrame(raf);
+  document.getElementById('gearBtn').style.display='block';
+  updateMusicBtn();
+  updateHoldBtn();
+  ac();
+  resize();
+  updateUI();
+  
+  doCountdown(()=>{
+    lastTs=performance.now();
+    raf=requestAnimationFrame(loop);
+    if(bgmEnabled)startBGM();
   });
+}
 
-  // 強制綁定
-  const sBtn = document.getElementById('startBtn');
-  if(sBtn) sBtn.onclick = startGame;
-  
-  const rBtn = document.getElementById('retryBtn');
-  if(rBtn) rBtn.onclick = function(){ document.getElementById('goScreen').classList.add('hidden'); startGame(); };
-  
-  const mBtn = document.getElementById('menuBtn');
-  if(mBtn) mBtn.onclick = function(){ document.getElementById('goScreen').classList.add('hidden'); goMenu(); };
+// --- 自動存檔與全局監聽 ---
+window.addEventListener('beforeunload', () => { if (typeof bm !== 'undefined' && bm.active && typeof running !== 'undefined' && running) saveBossProgress(); });
+window.addEventListener('pagehide', () => { if (typeof bm !== 'undefined' && bm.active && typeof running !== 'undefined' && running) saveBossProgress(); });
 
-  document.querySelectorAll('.mcard').forEach(card=>{card.addEventListener('click',()=>{document.querySelectorAll('.mcard').forEach(c=>c.classList.remove('sel'));card.classList.add('sel');curMode=card.dataset.mode;if(curMode==='battle')learnAiMode='none';document.getElementById('diffRow').style.display=(MODES[curMode].diffFixed&&curMode!=='battle'&&curMode!=='learn'&&curMode!=='boss')?'flex':'none';document.getElementById('aiDiffRow').style.display=curMode==='battle'?'flex':'none';updateBestDisplay();});});
-  document.getElementById('aiDiffSlider').addEventListener('input',function(){aiDiffIdx=parseInt(this.value);document.getElementById('aiDiffVal').textContent=AI_DIFF[aiDiffIdx].name;});
+window.addEventListener('DOMContentLoaded', () => {
+    loadStore();
+
+    document.getElementById('aiDiffSlider').addEventListener('input',function(){aiDiffIdx=parseInt(this.value);document.getElementById('aiDiffVal').textContent=AI_DIFF[aiDiffIdx].name;});
   document.getElementById('gearBtn').addEventListener('click',openPause);
   document.getElementById('resumeP').addEventListener('click',closePause);
   document.getElementById('settP').addEventListener('click',()=>{closePause();openSett();});
@@ -2623,6 +2615,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   resize();updateBestDisplay();updateMusicBtn();
   loadPlayerData();loadGAWeights();
   loadBCModelFromStorage().then(ok=>{if(ok){const bb=document.getElementById('bcBattleBtn');if(bb)bb.disabled=false;}});
+    });
 });
 </script>
     <div id="bossEnding" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95); z-index:10000; flex-direction:column; align-items:center; justify-content:center; color:#fff; text-align:center; font-family:'Courier New',monospace;">
