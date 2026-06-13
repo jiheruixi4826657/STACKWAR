@@ -2311,7 +2311,7 @@ function loadBossProgress() {
     try {
         const d = JSON.parse(raw);
         if (confirm(`發現第 ${d.stage} 關的存檔，是否繼續？`)) {
-            // 1. 進入 BOSS 模式基礎初始化 (但不重置所有變數)
+            // 1. 進入 BOSS 模式基礎初始化
             ['startScreen','goScreen','settWrap','pauseOverlay','cardOverlay','bossEnding'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
             const srInit=document.getElementById('stageResult');if(srInit){srInit.classList.remove('active');srInit.classList.add('hidden');}
             stopBGM();
@@ -2341,7 +2341,7 @@ function loadBossProgress() {
             bm.counterTimer = d.counterTimer || bm.COUNTER_BASE;
             bm.healTriggeredCount = d.healTriggeredCount || 0;
             
-            // 4. 恢復 BOSS 數據引用 (因為 JSON 不存物件引用)
+            // 4. 恢復 BOSS 數據引用
             const stageData = bossGetStageData(bm.stage);
             bm.bossData = stageData.data;
             bm.isBoss = stageData.isBoss;
@@ -2371,11 +2371,6 @@ function loadBossProgress() {
             return false;
         }
     } catch (e) {
-        console.error("Load boss progress error", e);
-        return false;
-    }
-}
-} catch (e) {
         console.error("Load boss progress error", e);
         return false;
     }
