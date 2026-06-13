@@ -2259,25 +2259,31 @@ function closeSett(){kbListen=null;document.getElementById('settWrap').classList
 
 function saveBossProgress() {
     if (!bm.active) return;
+    
+    // 建立要保存的狀態快照
+    const bmState = {};
+    const skipKeys = ['shakeIntervalId', 'pendingCardCb', 'dmgAnims', 'bossData', 'attackFlash'];
+    for (let key in bm) {
+        if (skipKeys.includes(key)) continue;
+        if (typeof bm[key] === 'function') continue;
+        bmState[key] = bm[key];
+    }
+
     const saveData = {
+        // 核心進度
         stage: bm.stage,
-        stagesCleared: bm.stagesCleared,
-        totalDmgDealt: bm.totalDmgDealt,
-        cardsAcquired: bm.cardsAcquired,
-        clearBonusMult: bm.clearBonusMult,
-        tspinBonusMult: bm.tspinBonusMult,
-        armorBreakMult: bm.armorBreakMult,
-        lineDmgBonus: bm.lineDmgBonus,
-        ironWillCharges: bm.ironWillCharges,
-        counterDelayBonus: bm.counterDelayBonus,
-        comboBurstBonus: bm.comboBurstBonus,
-        b2bEnhanceActive: bm.b2bEnhanceActive,
-        counterLawCount: bm.counterLawCount,
-        hasRevive: bm.hasRevive,
-        reviveUsed: bm.reviveUsed,
-        smallMonsterOrder: bm.smallMonsterOrder,
         score: score,
-        // 新增版面與狀態保存
+        level: level,
+        
+        // BOSS 戰鬥狀態
+        bmState: bmState,
+        bossHP: bm.bossHP,
+        bossMaxHP: bm.bossMaxHP,
+        bossShieldHP: bm.bossShieldHP,
+        counterTimer: bm.counterTimer,
+        healTriggeredCount: bm.healTriggeredCount,
+        
+        // 方塊遊戲狀態
         board: board,
         held: held,
         nextQ: nextQ,
@@ -2285,9 +2291,18 @@ function saveBossProgress() {
         combo: combo,
         b2b: b2b,
         b2bCount: b2bCount,
-        level: level
+        holdUsed: holdUsed,
+        
+        // 其他進度
+        timestamp: Date.now()
     };
-    localStorage.setItem('tetris_boss_save', JSON.stringify(saveData));
+    
+    try {
+        localStorage.setItem('tetris_boss_save', JSON.stringify(saveData));
+        console.log("Full game state saved.");
+    } catch (e) {
+        console.error("Save failed", e);
+    }
 }
 
 function loadBossProgress() {
@@ -2296,40 +2311,60 @@ function loadBossProgress() {
     try {
         const d = JSON.parse(raw);
         if (confirm(`發現第 ${d.stage} 關的存檔，是否繼續？`)) {
-            // 初始化基礎遊戲狀態
-            startBossMode(true); 
-            // 覆蓋存檔數據
-            bm.stage = d.stage;
-            bm.stagesCleared = d.stagesCleared;
-            bm.totalDmgDealt = d.totalDmgDealt;
-            bm.cardsAcquired = d.cardsAcquired || [];
-            bm.clearBonusMult = d.clearBonusMult || 0;
-            bm.tspinBonusMult = d.tspinBonusMult || 0;
-            bm.armorBreakMult = d.armorBreakMult || 1.0;
-            bm.lineDmgBonus = d.lineDmgBonus || 0;
-            bm.ironWillCharges = d.ironWillCharges || 0;
-            bm.counterDelayBonus = d.counterDelayBonus || 0;
-            bm.comboBurstBonus = d.comboBurstBonus || 0;
-            bm.b2bEnhanceActive = d.b2bEnhanceActive || false;
-            bm.counterLawCount = d.counterLawCount || 0;
-            bm.hasRevive = d.hasRevive || false;
-            bm.reviveUsed = d.reviveUsed || false;
-            bm.smallMonsterOrder = d.smallMonsterOrder || genSmallMonsterOrder();
-            score = d.score || 0;
+            // 1. 進入 BOSS 模式基礎初始化 (但不重置所有變數)
+            ['startScreen','goScreen','settWrap','pauseOverlay','cardOverlay','bossEnding'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
+            const srInit=document.getElementById('stageResult');if(srInit){srInit.classList.remove('active');srInit.classList.add('hidden');}
+            stopBGM();
             
-            // 恢復版面與狀態
-            if (d.board) board = JSON.parse(JSON.stringify(d.board));
-            held = d.held || null;
-            if (d.nextQ) nextQ = [...d.nextQ];
-            if (d.bag) bag = [...d.bag];
+            // 2. 恢復方塊遊戲基礎狀態
+            board = JSON.parse(JSON.stringify(d.board));
+            held = d.held;
+            nextQ = [...d.nextQ];
+            bag = [...d.bag];
+            score = d.score || 0;
+            level = d.level || 5;
             combo = (d.combo !== undefined) ? d.combo : -1;
             b2b = d.b2b || false;
             b2bCount = d.b2bCount || 0;
-            level = d.level || 5;
+            holdUsed = d.holdUsed || false;
+            
+            // 3. 恢復 bm 物件的所有狀態
+            bm.active = true;
+            if (d.bmState) {
+                for (let key in d.bmState) {
+                    bm[key] = d.bmState[key];
+                }
+            }
+            bm.bossHP = d.bossHP;
+            bm.bossMaxHP = d.bossMaxHP;
+            bm.bossShieldHP = d.bossShieldHP || 0;
+            bm.counterTimer = d.counterTimer || bm.COUNTER_BASE;
+            bm.healTriggeredCount = d.healTriggeredCount || 0;
+            
+            // 4. 恢復 BOSS 數據引用 (因為 JSON 不存物件引用)
+            const stageData = bossGetStageData(bm.stage);
+            bm.bossData = stageData.data;
+            bm.isBoss = stageData.isBoss;
 
-            bossStartStage(bm.stage);
-            updateUI();
+            // 5. 啟動遊戲循環
+            running = true;
+            paused = false;
+            lastTs = performance.now();
+            
+            // 6. UI 更新
+            document.getElementById('gearBtn').style.display='block';
+            updateMusicBtn();
             updateHoldBtn();
+            ac();
+            resize();
+            updateUI();
+            updateBossHUD();
+            
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(loop);
+            if(bgmEnabled) startBGM();
+            
+            console.log("Full game state loaded.");
             return true;
         } else {
             localStorage.removeItem('tetris_boss_save');
@@ -2339,6 +2374,7 @@ function loadBossProgress() {
         console.error("Load boss progress error", e);
         return false;
     }
+}
 } catch (e) {
         console.error("Load boss progress error", e);
         return false;
