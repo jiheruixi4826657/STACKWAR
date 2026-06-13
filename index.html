@@ -2276,7 +2276,16 @@ function saveBossProgress() {
         hasRevive: bm.hasRevive,
         reviveUsed: bm.reviveUsed,
         smallMonsterOrder: bm.smallMonsterOrder,
-        score: score
+        score: score,
+        // 新增版面與狀態保存
+        board: board,
+        held: held,
+        nextQ: nextQ,
+        bag: bag,
+        combo: combo,
+        b2b: b2b,
+        b2bCount: b2bCount,
+        level: level
     };
     localStorage.setItem('tetris_boss_save', JSON.stringify(saveData));
 }
@@ -2308,13 +2317,29 @@ function loadBossProgress() {
             bm.smallMonsterOrder = d.smallMonsterOrder || genSmallMonsterOrder();
             score = d.score || 0;
             
+            // 恢復版面與狀態
+            if (d.board) board = JSON.parse(JSON.stringify(d.board));
+            held = d.held || null;
+            if (d.nextQ) nextQ = [...d.nextQ];
+            if (d.bag) bag = [...d.bag];
+            combo = (d.combo !== undefined) ? d.combo : -1;
+            b2b = d.b2b || false;
+            b2bCount = d.b2bCount || 0;
+            level = d.level || 5;
+
             bossStartStage(bm.stage);
+            updateUI();
+            updateHoldBtn();
             return true;
         } else {
             localStorage.removeItem('tetris_boss_save');
             return false;
         }
     } catch (e) {
+        console.error("Load boss progress error", e);
+        return false;
+    }
+} catch (e) {
         console.error("Load boss progress error", e);
         return false;
     }
@@ -2348,7 +2373,7 @@ function startBossMode(isLoad){ if(!isLoad && loadBossProgress()) return;
   document.getElementById('gearBtn').style.display='block';
   updateMusicBtn();updateHoldBtn();ac();resize();updateUI();
   cancelAnimationFrame(raf);
-  bossStartStage(1);
+  if(!isLoad) bossStartStage(1);
   if(bgmEnabled)startBGM();
 }
 function goMenu(){document.getElementById('startScreen').classList.remove('hidden');document.getElementById('gearBtn').style.display='none';document.getElementById('dangerBar').style.display='none';document.getElementById('battleTopHUD').style.display='none';document.getElementById('bossTopBar').style.display='none';document.getElementById('aiCanvas').style.display='none';document.getElementById('vsEl').style.display='none';['cardOverlay','bossEnding'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});const srGo=document.getElementById('stageResult');if(srGo){srGo.classList.remove('active');srGo.classList.add('hidden');}if(bm.shakeIntervalId){clearInterval(bm.shakeIntervalId);bm.shakeIntervalId=null;}const gwGo=document.getElementById('gameWrap');if(gwGo)gwGo.style.transform='';bm.active=false;updateBestDisplay();resize();}
