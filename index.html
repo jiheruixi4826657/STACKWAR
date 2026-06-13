@@ -175,8 +175,15 @@ h1{font-size:clamp(1.6rem,7vw,2.8rem);color:var(--c0);text-shadow:0 0 24px var(-
 .card-choice.sel{border-color:#ffd700!important;background:#1a1200!important;box-shadow:0 0 14px rgba(255,215,0,.3)}
 .card-choice.disabled-card{opacity:.4;cursor:not-allowed}
 .card-choice .ci{font-size:1.5rem}.card-choice .cn{font-size:.65rem;color:#ffd700;font-weight:bold;letter-spacing:1px;line-height:1.3}.card-choice .cd{font-size:.48rem;color:#777;line-height:1.4}
-#stageResult{position:fixed;inset:0;background:rgba(0,0,0,.91);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:199;padding:16px;}
-#bossEnding{position:fixed;inset:0;background:radial-gradient(ellipse at center,#0a0a20 0%,#000 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:210;padding:20px;text-align:center;}
+	#stageResult{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:199;padding:16px;backdrop-filter:blur(4px);}
+	#stageResult.active{display:flex;}
+	#skillPreviewOverlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px);color:#fff;text-align:center;}
+	#skillPreviewOverlay.active{display:flex;}
+	#skillPreviewOverlay #spArt{font-size:4rem;margin:10px 0;filter:drop-shadow(0 0 20px rgba(255,255,255,0.4));}
+	#skillPreviewOverlay #spName{font-size:1.5rem;font-weight:bold;color:#ffd700;margin-bottom:5px;text-shadow:0 0 10px rgba(255,215,0,0.5);}
+	#skillPreviewOverlay #spSkill{font-size:0.9rem;color:#aaa;max-width:80%;line-height:1.4;}
+	#skillPreviewOverlay #spTimer{font-size:3rem;font-weight:bold;color:#0f0;margin-top:20px;font-family:'Courier New',monospace;}
+	#bossEnding{position:fixed;inset:0;background:radial-gradient(ellipse at center,#0a0a20 0%,#000 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:210;padding:20px;text-align:center;}
 @keyframes bossFlashAnim{0%{opacity:0}20%{opacity:1}80%{opacity:.8}100%{opacity:0}}
 #bossSkillFlash{position:fixed;inset:0;pointer-events:none;z-index:80;display:none}
 	#bossSkillFlash.active{display:block;animation:bossFlashAnim .7s ease-out forwards}
@@ -388,19 +395,19 @@ h1{font-size:clamp(1.6rem,7vw,2.8rem);color:var(--c0);text-shadow:0 0 24px var(-
   <div id="cardCountdownEl" style="font-size:.85rem;color:#fa0;min-height:1.2em;text-align:center"></div>
 </div>
 <!-- Stage result -->
-	<div id="stageResult" class="hidden">
+	<div id="stageResult">
 	  <div id="srTitle" style="font-size:1.3rem;letter-spacing:3px;font-weight:bold"></div>
 	  <div id="srDetails" style="font-size:.78rem;color:#aaa;text-align:center;line-height:2"></div>
 	  <button class="btn" id="stageNextBtn" onclick="onStageNext()">繼續</button>
 	</div>
-	<div id="skillPreviewOverlay">
-	  <div style="font-size:0.7rem;color:#888;margin-bottom:4px">下一位挑戰者</div>
-	  <div id="spArt" style="font-size:3rem"></div>
-	  <div id="spName"></div>
-	  <div id="spSkill"></div>
-	  <div id="spTimer">4</div>
-	  <div style="font-size:0.6rem;color:#555;margin-top:10px">準備戰鬥...</div>
-	</div>
+		<div id="skillPreviewOverlay">
+		  <div style="font-size:0.8rem;color:#888;letter-spacing:2px">NEXT CHALLENGER</div>
+		  <div id="spArt"></div>
+		  <div id="spName"></div>
+		  <div id="spSkill"></div>
+		  <div id="spTimer">4</div>
+		  <div style="font-size:0.7rem;color:#555;margin-top:20px;letter-spacing:1px">GET READY...</div>
+		</div>
 <!-- Boss all clear ending -->
 <div id="bossEnding" class="hidden">
   <div style="font-size:1.6rem;color:#ffd700;text-shadow:0 0 30px #ffd700;letter-spacing:4px;font-weight:bold">🌟 ALL CLEAR!</div>
@@ -1159,11 +1166,11 @@ function bossStageCleared(){
     const elapsed = Math.round((Date.now() - bm.stageStartTime) / 1000);
     if (srT) { srT.textContent = `⚔ BOSS 擊敗！`; srT.style.color = '#ffd700'; }
     if (srD) { srD.innerHTML = `傷害：${bm.stageDmgDealt.toLocaleString()}<br>累計傷害：${bm.totalDmgDealt.toLocaleString()}<br>用時：${elapsed}秒<br><br><span style="color:#0f0">是否繼續前往下一關？</span>`; }
-    sr.classList.remove('hidden');
+    sr.classList.add('active');
     const nextBtn = document.getElementById('stageNextBtn');
     nextBtn.textContent = "繼續戰鬥";
     nextBtn.onclick = () => {
-      sr.classList.add('hidden');
+      sr.classList.remove('active');
       if (nextStage > 42) bossAllClear();
       else startNextStageWithPreview(nextStage, shouldCard);
     };
