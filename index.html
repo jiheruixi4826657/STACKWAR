@@ -179,8 +179,33 @@ h1{font-size:clamp(1.6rem,7vw,2.8rem);color:var(--c0);text-shadow:0 0 24px var(-
 #bossEnding{position:fixed;inset:0;background:radial-gradient(ellipse at center,#0a0a20 0%,#000 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:210;padding:20px;text-align:center;}
 @keyframes bossFlashAnim{0%{opacity:0}20%{opacity:1}80%{opacity:.8}100%{opacity:0}}
 #bossSkillFlash{position:fixed;inset:0;pointer-events:none;z-index:80;display:none}
-#bossSkillFlash.active{display:block;animation:bossFlashAnim .7s ease-out forwards}
-</style>
+	#bossSkillFlash.active{display:block;animation:bossFlashAnim .7s ease-out forwards}
+	/* Monster UI */
+	#monsterView{
+	  width:100%;height:100px;background:linear-gradient(180deg,rgba(20,0,20,0.8),rgba(0,0,0,0.6));
+	  border:1px solid #424;border-radius:8px;display:flex;align-items:center;justify-content:center;
+	  position:relative;overflow:hidden;margin-bottom:4px;box-shadow:inset 0 0 15px rgba(255,0,255,0.1);
+	}
+	#monsterArt{
+	  font-size:3.2rem;text-shadow:0 0 20px rgba(255,0,0,0.4);
+	  animation:floatAnim 2.5s ease-in-out infinite;z-index:2;
+	}
+	@keyframes floatAnim{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+	#monsterHitFlash{
+	  position:absolute;inset:0;background:rgba(255,255,255,0.5);opacity:0;pointer-events:none;z-index:3;
+	}
+	@keyframes hitFlashAnim{0%{opacity:1}100%{opacity:0}}
+	.hit-flash{animation:hitFlashAnim 0.2s ease-out forwards}
+	/* Missile & Impact */
+	.missile{
+	  position:fixed;width:12px;height:12px;border-radius:50%;z-index:150;pointer-events:none;
+	  box-shadow:0 0 10px currentColor;
+	}
+	.missile-trail{
+	  position:fixed;width:4px;height:4px;border-radius:50%;opacity:0.6;z-index:149;pointer-events:none;
+	}
+	@keyframes trailFade{0%{transform:scale(1.5);opacity:0.6}100%{transform:scale(0);opacity:0}}
+	</style>
 </head>
 <body>
 <div id="startScreen">
@@ -394,10 +419,13 @@ h1{font-size:clamp(1.6rem,7vw,2.8rem);color:var(--c0);text-shadow:0 0 24px var(-
       <div class="box"><div class="lbl">ATK</div><div class="val" id="atkEl">0</div></div>
       <div class="box" id="modeEl" style="font-size:.52rem;color:#444;text-align:center;line-height:1.9"></div>
     </div>
-    <div id="deskRBoss" style="display:none;flex-direction:column;gap:4px;width:100%">
-      <div id="bmArt" style="text-align:center;font-size:2rem;line-height:1.3;padding:3px 0"></div>
-      <div id="bmName" style="font-size:.58rem;color:#f66;text-align:center;font-weight:bold;letter-spacing:1px"></div>
-      <div id="bmStage" style="font-size:.45rem;color:#888;text-align:center"></div>
+	    <div id="deskRBoss" style="display:none;flex-direction:column;gap:4px;width:100%">
+	      <div id="monsterView">
+	        <div id="monsterArt">👹</div>
+	        <div id="monsterHitFlash"></div>
+	      </div>
+	      <div id="bmName" style="font-size:.58rem;color:#f66;text-align:center;font-weight:bold;letter-spacing:1px"></div>
+	      <div id="bmStage" style="font-size:.45rem;color:#888;text-align:center"></div>
       <div style="padding:0 3px">
         <div style="height:7px;background:#2a0010;border-radius:3px;overflow:hidden">
           <div id="bmHPFill" style="height:100%;background:linear-gradient(90deg,#ff1010,#ff6040);border-radius:3px;width:100%;transition:width .25s"></div>
@@ -466,35 +494,36 @@ let curMode='free';
 
 // ── BOSS MODE DATA ──
 const SMALL_MONSTERS=[
-  {id:0, name:'搗蛋小惡魔',art:'😈',skill:'遮蔽NEXT 3秒',skillId:'hideNext'},
-  {id:1, name:'洞穴哥布林', art:'👺',skill:'隨機1格障礙',skillId:'randObstacle'},
-  {id:2, name:'骷髏士兵',   art:'💀',skill:'底部+1垃圾行',skillId:'addGarb1'},
-  {id:3, name:'食屍鬼',     art:'🧟',skill:'Combo-2層',skillId:'comboDown'},
-  {id:4, name:'骷髏王',     art:'👑',skill:'垃圾行+2・封鎖2格',skillId:'garbBlock2'},
-  {id:5, name:'地獄蝙蝠',   art:'🦇',skill:'下降速度+20%×8秒',skillId:'speedUp'},
-  {id:6, name:'毒沼史萊姆', art:'🫧',skill:'操作延遲5秒',skillId:'inputDelay'},
-  {id:7, name:'詛咒巫師',   art:'🧙',skill:'Hold封印5秒',skillId:'holdSeal5'},
-  {id:8, name:'牛頭魔',     art:'🐂',skill:'場地生成3格障礙',skillId:'fieldObs3'},
-  {id:9, name:'地獄公爵',   art:'👿',skill:'畫面變暗5秒・Combo歸零',skillId:'darkReset'},
-  {id:10,name:'冰霜妖精',   art:'🧊',skill:'DAS速度減半6秒',skillId:'slowDAS'},
-  {id:11,name:'冰霜巨人',   art:'🏔',skill:'鎖定加速6秒',skillId:'fastLock'},
-  {id:12,name:'深海魔女',   art:'🐙',skill:'畫面晃動',skillId:'shake'},
-  {id:13,name:'瘟疫醫生',   art:'🎭',skill:'傷害-25%×8秒',skillId:'dmgDebuff25'},
-  {id:14,name:'深淵女王',   art:'👸',skill:'封鎖3格・Combo清空',skillId:'block3Reset'},
-  {id:15,name:'石像鬼',     art:'🗿',skill:'旋轉輸入延遲5秒',skillId:'rotDelay'},
-  {id:16,name:'冥河擺渡人', art:'⛵',skill:'方塊透明4秒',skillId:'transparent'},
-  {id:17,name:'亡靈祭司',   art:'🦴',skill:'生成4格障礙',skillId:'fieldObs4'},
-  {id:18,name:'地獄犬',     art:'🐕',skill:'速度持續增加8秒',skillId:'gravInc'},
-  {id:19,name:'深淵魔將',   art:'⚔️',skill:'左右反轉3秒',skillId:'reverseCtrl'},
-  {id:20,name:'光翼天使',   art:'👼',skill:'傷害-20%×8秒',skillId:'dmgDebuff20'},
-  {id:21,name:'聖堂守衛',   art:'🛡',skill:'生成護盾',skillId:'bossShield'},
-  {id:22,name:'晨曦天使',   art:'🌅',skill:'封鎖底部2行×6秒',skillId:'blockBottom'},
-  {id:23,name:'聖光使徒',   art:'✨',skill:'傷害-30%×8秒',skillId:'dmgDebuff30'},
-  {id:24,name:'熾天使米迦勒',art:'⚡',skill:'封鎖3格・傷害-30%',skillId:'block3Dmg30'},
-  {id:25,name:'雷霆天使',   art:'⚡',skill:'輸入延遲5秒',skillId:'inputDelay2'},
-  {id:26,name:'審判官',     art:'⚖️',skill:'Hold封鎖8秒',skillId:'holdSeal8'},
-  {id:27,name:'光輝戰神',   art:'🗡',skill:'隨機垃圾行1行',skillId:'randGarb'},
-  {id:28,name:'聖域守門人', art:'🏛',skill:'中央3列封鎖6秒',skillId:'blockCenter'},
+  {id:0, name:'烈焰惡魔', art:'🔥', skill:'燃燒：傷害降低20% (3秒)', skillId:'burn'},
+  {id:1, name:'寒冰精靈', art:'❄️', skill:'冰凍：3個方塊需額外消除', skillId:'freeze'},
+  {id:2, name:'腐敗殭屍', art:'🌑', skill:'腐化：新方塊50%機率畸形', skillId:'corrupt'},
+  {id:3, name:'虛弱幽靈', art:'💀', skill:'虛弱：加成失效 (3秒)', skillId:'weaken'},
+  {id:4, name:'混沌之子', art:'🌪️', skill:'混亂：下個必為異變方塊', skillId:'chaos'},
+  {id:5, name:'虛空行者', art:'🌌', skill:'虛空撕裂：隱藏頂部3格', skillId:'rift'},
+  {id:6, name:'烈焰惡魔', art:'🔥', skill:'燃燒：傷害降低20% (3秒)', skillId:'burn'},
+  {id:7, name:'冰封守衛', art:'❄️', skill:'冰凍：3個方塊需額外消除', skillId:'freeze'},
+  {id:8, name:'暗影行者', art:'🌑', skill:'腐化：新方塊50%機率畸形', skillId:'corrupt'},
+  {id:9, name:'凋零骸骨', art:'💀', skill:'虛弱：加成失效 (3秒)', skillId:'weaken'},
+  {id:10,name:'風暴之眼', art:'🌪️', skill:'混亂：下個必為異變方塊', skillId:'chaos'},
+  {id:11,name:'虛空撕裂者', art:'🌌', skill:'虛空撕裂：隱藏頂部3格', skillId:'rift'},
+  {id:12,name:'地獄火',   art:'🔥', skill:'燃燒：傷害降低20% (3秒)', skillId:'burn'},
+  {id:13,name:'極地妖精', art:'❄️', skill:'冰凍：3個方塊需額外消除', skillId:'freeze'},
+  {id:14,name:'深淵觸手', art:'🌑', skill:'腐化：新方塊50%機率畸形', skillId:'corrupt'},
+  {id:15,name:'死亡騎士', art:'💀', skill:'虛弱：加成失效 (3秒)', skillId:'weaken'},
+  {id:16,name:'颶風龍',   art:'🌪️', skill:'混亂：下個必為異變方塊', skillId:'chaos'},
+  {id:17,name:'虛空幻影', art:'🌌', skill:'虛空撕裂：隱藏頂部3格', skillId:'rift'},
+  {id:18,name:'灰燼領主', art:'🔥', skill:'燃燒：傷害降低20% (3秒)', skillId:'burn'},
+  {id:19,name:'永凍魔女', art:'❄️', skill:'冰凍：3個方塊需額外消除', skillId:'freeze'},
+  {id:20,name:'虛空蠕蟲', art:'🌑', skill:'腐化：新方塊50%機率畸形', skillId:'corrupt'},
+  {id:21,name:'幽冥獵犬', art:'💀', skill:'虛弱：加成失效 (3秒)', skillId:'weaken'},
+  {id:22,name:'時空幻影', art:'🌪️', skill:'混亂：下個必為異變方塊', skillId:'chaos'},
+  {id:23,name:'虛空祭司', art:'🌌', skill:'虛空撕裂：隱藏頂部3格', skillId:'rift'},
+  {id:24,name:'赤紅使徒', art:'🔥', skill:'燃燒：傷害降低20% (3秒)', skillId:'burn'},
+  {id:25,name:'冰晶龍',   art:'❄️', skill:'冰凍：3個方塊需額外消除', skillId:'freeze'},
+  {id:26,name:'蝕骨者',   art:'🌑', skill:'腐化：新方塊50%機率畸形', skillId:'corrupt'},
+  {id:27,name:'斷魂鐮刀', art:'💀', skill:'虛弱：加成失效 (3秒)', skillId:'weaken'},
+  {id:28,name:'虛無風暴', art:'🌪️', skill:'混亂：下個必為異變方塊', skillId:'chaos'},
+  {id:29,name:'虛空龍',   art:'🌌', skill:'虛空撕裂：隱藏頂部3格', skillId:'rift'},
 ];
 const BIG_BOSSES=[
   {name:'邪獄守門士',art:'👹',color:'#ff4040',desc:'地獄之門的守衛',skills:[1,2],stageIdx:0},
@@ -506,11 +535,12 @@ const BIG_BOSSES=[
   {name:'神滅者',    art:'☯️',color:'#ffffff',desc:'毀滅神明的存在', skills:[0,1,2,3,4],stageIdx:6},
 ];
 const BOSS_BIG_SKILLS=[
-  {name:'隱匿迷霧',desc:'場地方塊隱藏3秒'},
-  {name:'垃圾轟炸',desc:'底部加入2行垃圾'},
-  {name:'鮮血再生',desc:'恢復15-20% HP'},
-  {name:'混沌裂變',desc:'隨機消除2-4行（無分）'},
-  {name:'方塊腐化',desc:'落下方塊附帶灰格5秒'},
+  {name:'烈焰焚身',desc:'燃燒：傷害降低20% (3秒)'},
+  {name:'極寒冰凍',desc:'冰凍：3個方塊需額外消除'},
+  {name:'鮮血再生',desc:'恢復15-20% HP (限一次)'},
+  {name:'虛弱詛咒',desc:'虛弱：加成失效 (3秒)'},
+  {name:'時空混亂',desc:'混亂：下個必為異變方塊'},
+  {name:'虛空撕裂',desc:'虛空撕裂：隱藏頂部3格'},
 ];
 const CARD_POOL=[
   {id:'clearBonus', icon:'💡',name:'清除加成I',  desc:'+2%消除傷害（可疊加）',stackable:true},
@@ -537,10 +567,12 @@ const bm={
   smallMonsterOrder:[],
   healTriggered:false,
   // timed effects (ms remaining)
+  burnTimer:0, freezeTimer:0, riftTimer:0, corruptTimer:0, weakenTimer:0, chaosTimer:0,
+  dmgDebuffMult:1.0, dmgDebuffTimer:0, hideBlocksTimer:0,
+  // 舊的計時器保留但不再由技能觸發，避免報錯
   hideNextTimer:0,holdSealTimer:0,darkTimer:0,reverseTimer:0,
   transpTimer:0,gravBoostTimer:0,fastLockTimer:0,dasSlowTimer:0,
   inputIgnoreTimer:0,rotDelayTimer:0,deformTimer:0,blockCenterTimer:0,blockBottomTimer:0,
-  dmgDebuffMult:1.0,dmgDebuffTimer:0,hideBlocksTimer:0,
   attackFlash:{timer:0,name:'',col:'#ff4040'},
   // card bonuses
   clearBonusMult:0,tspinBonusMult:0,tradeHoldActive:false,holdDisabled:false,
@@ -582,9 +614,9 @@ function updateBossHUD(){
   const btN=document.getElementById('btName');if(btN)btN.textContent=(bm.bossData?bm.bossData.art+' '+bm.bossData.name:'');
   const btSt=document.getElementById('btStage');if(btSt)btSt.textContent=`${bm.stage}/42`;
   const btT=document.getElementById('btTimer');if(btT)btT.textContent=(bm.counterTimer/1000).toFixed(1)+'s';
-  // desk right panel
-  const bmA=document.getElementById('bmArt');if(bmA)bmA.textContent=bm.bossData?bm.bossData.art:'';
-  const bmN=document.getElementById('bmName');if(bmN)bmN.textContent=bm.bossData?bm.bossData.name:'';
+	  // desk right panel
+	  const mArt=document.getElementById('monsterArt');if(mArt)mArt.textContent=bm.bossData?bm.bossData.art:'';
+	  const bmN=document.getElementById('bmName');if(bmN)bmN.textContent=bm.bossData?bm.bossData.name:'';
   const bmS=document.getElementById('bmStage');if(bmS)bmS.textContent=`Stage ${bm.stage}/42 ${bm.isBoss?'⚠ BOSS':''}`;
   const bmHF=document.getElementById('bmHPFill');if(bmHF)bmHF.style.width=pct+'%';
   const bmHN=document.getElementById('bmHPNum');if(bmHN)bmHN.textContent=hpTxt;
@@ -603,21 +635,14 @@ function updateBossHUD(){
   const bmD=document.getElementById('bmDebuff');
   if(bmD){
     const d=[];
-    if(bm.holdSealTimer>0)d.push(`🔒Hold(${(bm.holdSealTimer/1000).toFixed(1)}s)`);
-    if(bm.reverseTimer>0)d.push(`↔反轉(${(bm.reverseTimer/1000).toFixed(1)}s)`);
-    if(bm.darkTimer>0)d.push(`🌑黑暗(${(bm.darkTimer/1000).toFixed(1)}s)`);
-    if(bm.transpTimer>0)d.push(`👻透明(${(bm.transpTimer/1000).toFixed(1)}s)`);
-    if(bm.hideNextTimer>0)d.push(`❓NEXT(${(bm.hideNextTimer/1000).toFixed(1)}s)`);
+    if(bm.burnTimer>0)d.push(`🔥燃燒(${(bm.burnTimer/1000).toFixed(1)}s)`);
+    if(bm.freezeTimer>0)d.push(`❄️冰凍(${(bm.freezeTimer/1000).toFixed(1)}s)`);
+    if(bm.riftTimer>0)d.push(`🌌撕裂(${(bm.riftTimer/1000).toFixed(1)}s)`);
+    if(bm.corruptTimer>0)d.push(`🌑腐化(${(bm.corruptTimer/1000).toFixed(1)}s)`);
+    if(bm.weakenTimer>0)d.push(`💀虛弱(${(bm.weakenTimer/1000).toFixed(1)}s)`);
+    if(bm.chaosTimer>0)d.push(`🌪️混亂(${(bm.chaosTimer/1000).toFixed(1)}s)`);
     if(bm.hideBlocksTimer>0)d.push(`🌫迷霧(${(bm.hideBlocksTimer/1000).toFixed(1)}s)`);
-    if(bm.gravBoostTimer>0)d.push(`⚡速度↑(${(bm.gravBoostTimer/1000).toFixed(1)}s)`);
-    if(bm.fastLockTimer>0)d.push(`⏬鎖定↑(${(bm.fastLockTimer/1000).toFixed(1)}s)`);
-    if(bm.dasSlowTimer>0)d.push(`🐢DAS↓(${(bm.dasSlowTimer/1000).toFixed(1)}s)`);
-    if(bm.inputIgnoreTimer>0)d.push(`🚫輸入(${(bm.inputIgnoreTimer/1000).toFixed(1)}s)`);
-    if(bm.rotDelayTimer>0)d.push(`🚫旋轉(${(bm.rotDelayTimer/1000).toFixed(1)}s)`);
-    if(bm.deformTimer>0)d.push(`☠腐化(${(bm.deformTimer/1000).toFixed(1)}s)`);
-    if(bm.blockCenterTimer>0)d.push(`🚧中央(${(bm.blockCenterTimer/1000).toFixed(1)}s)`);
-    if(bm.blockBottomTimer>0)d.push(`🚧底部(${(bm.blockBottomTimer/1000).toFixed(1)}s)`);
-    if(bm.dmgDebuffTimer>0)d.push(`💔傷害×${bm.dmgDebuffMult.toFixed(2)}(${(bm.dmgDebuffTimer/1000).toFixed(1)}s)`);
+    if(bm.dmgDebuffTimer>0 && bm.burnTimer <= 0)d.push(`💔傷害×${bm.dmgDebuffMult.toFixed(2)}(${(bm.dmgDebuffTimer/1000).toFixed(1)}s)`);
     bmD.textContent=d.length?d.join('\n'):'';
   }
   // acquired cards
@@ -640,37 +665,111 @@ function placeObstacles(n){
   // push cur piece up if overlapping
   if(cur){while(hits(cur.type,cur.rot,cur.x,cur.y,board))cur.y--;}
 }
+function spawnMissile(startX, startY, type, count) {
+  const targetEl = document.getElementById('monsterArt');
+  if (!targetEl) return;
+  const rect = targetEl.getBoundingClientRect();
+  const targetX = rect.left + rect.width / 2;
+  const targetY = rect.top + rect.height / 2;
+
+  const colors = { 1: '#0ff', 2: '#0f0', 3: '#ff0', 4: '#f0f', 'T': '#a0f' };
+  const color = colors[type] || '#fff';
+
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const missile = document.createElement('div');
+      missile.className = 'missile';
+      missile.style.color = color;
+      missile.style.left = startX + 'px';
+      missile.style.top = startY + 'px';
+      missile.style.background = color;
+      document.body.appendChild(missile);
+
+      const startTime = performance.now();
+      const duration = 600 + Math.random() * 300;
+      const cp1x = startX + (Math.random() - 0.5) * 400;
+      const cp1y = startY - 200 - Math.random() * 200;
+
+      function anim(time) {
+        const t = Math.min(1, (time - startTime) / duration);
+        // Bezier curve
+        const x = (1 - t) * (1 - t) * startX + 2 * (1 - t) * t * cp1x + t * t * targetX;
+        const y = (1 - t) * (1 - t) * startY + 2 * (1 - t) * t * cp1y + t * t * targetY;
+
+        missile.style.left = x + 'px';
+        missile.style.top = y + 'px';
+
+        // Trail
+        if (Math.random() > 0.3) {
+          const trail = document.createElement('div');
+          trail.className = 'missile-trail';
+          trail.style.left = x + 4 + 'px';
+          trail.style.top = y + 4 + 'px';
+          trail.style.background = color;
+          trail.style.animation = 'trailFade 0.4s forwards';
+          document.body.appendChild(trail);
+          setTimeout(() => trail.remove(), 400);
+        }
+
+        if (t < 1) {
+          requestAnimationFrame(anim);
+        } else {
+          missile.remove();
+          if (i === count - 1) triggerMonsterHit();
+        }
+      }
+      requestAnimationFrame(anim);
+    }, i * 100);
+  }
+}
+
+function triggerMonsterHit() {
+  const flash = document.getElementById('monsterHitFlash');
+  if (flash) {
+    flash.classList.remove('hit-flash');
+    void flash.offsetWidth;
+    flash.classList.add('hit-flash');
+  }
+  const art = document.getElementById('monsterArt');
+  if (art) {
+    art.style.animation = 'none';
+    void art.offsetWidth;
+    art.style.animation = 'floatAnim 2.5s ease-in-out infinite, shake 0.2s';
+  }
+}
+
 function bossApplySmallSkill(skillId){
+  if(bm.ironWillCharges>0){bm.ironWillCharges--;spawnDmgAnim('🛡 免疫','#8080ff');updateBossHUD();return;}
   switch(skillId){
-    case 'hideNext': bm.hideNextTimer=3000; break;
-    case 'randObstacle': placeObstacles(1); break;
-    case 'addGarb1': addGarb(1); break;
-    case 'comboDown': combo=Math.max(-1,combo-2); break;
-    case 'garbBlock2': addGarb(2);placeObstacles(2); break;
-    case 'speedUp': bm.gravBoostTimer=8000; break;
-    case 'inputDelay': case 'inputDelay2': bm.inputIgnoreTimer=5000; break;
-    case 'holdSeal5': bm.holdSealTimer=5000; break;
-    case 'holdSeal8': bm.holdSealTimer=8000; break;
-    case 'fieldObs3': placeObstacles(3); break;
-    case 'fieldObs4': placeObstacles(4); break;
-    case 'darkReset': bm.darkTimer=5000;combo=-1; break;
-    case 'slowDAS': bm.dasSlowTimer=6000; break;
-    case 'fastLock': bm.fastLockTimer=6000; break;
-    case 'shake': triggerShake(); break;
-    case 'dmgDebuff25': bm.dmgDebuffMult=0.75;bm.dmgDebuffTimer=8000; break;
-    case 'dmgDebuff20': bm.dmgDebuffMult=0.80;bm.dmgDebuffTimer=8000; break;
-    case 'dmgDebuff30': bm.dmgDebuffMult=0.70;bm.dmgDebuffTimer=8000; break;
-    case 'block3Reset': placeObstacles(3);combo=-1; break;
-    case 'block3Dmg30': placeObstacles(3);bm.dmgDebuffMult=0.70;bm.dmgDebuffTimer=8000; break;
-    case 'rotDelay': bm.rotDelayTimer=5000; break;
-    case 'transparent': bm.transpTimer=4000; break;
-    case 'gravInc': bm.gravBoostTimer=8000; break;
-    case 'reverseCtrl': bm.reverseTimer=3000; break;
-    case 'bossShield': bm.bossShieldHP=Math.round(bm.bossMaxHP*.15); break;
-    case 'blockBottom': bm.blockBottomTimer=6000; break;
-    case 'blockCenter': bm.blockCenterTimer=6000; break;
-    case 'randGarb': addGarb(1); break;
+    case 'burn': bm.burnTimer=3000; bm.dmgDebuffMult=0.80; bm.dmgDebuffTimer=3000; spawnDmgAnim('🔥 燃燒','#f40'); break;
+    case 'freeze': bm.freezeTimer=3000; freezeBoard(3); spawnDmgAnim('❄️ 冰凍','#0cf'); break;
+    case 'rift': bm.riftTimer=3000; spawnDmgAnim('🌌 虛空撕裂','#a0f'); break;
+    case 'corrupt': bm.corruptTimer=3000; spawnDmgAnim('🌑 腐化','#888'); break;
+    case 'weaken': bm.weakenTimer=3000; spawnDmgAnim('💀 虛弱','#aaa'); break;
+    case 'chaos': bm.chaosTimer=2000; spawnDmgAnim('🌪️ 混亂','#ff0'); break;
     default: break;
+  }
+  updateBossHUD();
+}
+
+function voidRift(n){
+  let cells=[];
+  for(let r=HIDDEN;r<TOTAL;r++)for(let c=0;c<COLS;c++)if(board[r][c])cells.push({r,c});
+  if(cells.length===0)return;
+  for(let i=0;i<n && cells.length>0;i++){
+    const idx=Math.floor(Math.random()*cells.length);
+    const{r,c}=cells.splice(idx,1)[0];
+    board[r][c]=0;
+    spawnBurstParticles(c*CELL+CELL/2,(r-HIDDEN)*CELL+CELL/2,'#a0f',8,CELL*0.3);
+  }
+}
+function freezeBoard(n){
+  const targets=[];
+  for(let r=HIDDEN;r<TOTAL;r++)for(let c=0;c<COLS;c++)if(board[r][c]&&board[r][c]!=='#484848'&&!board[r][c].startsWith('F'))targets.push({r,c});
+  for(let i=0;i<n&&targets.length>0;i++){
+    const idx=Math.floor(Math.random()*targets.length);
+    const {r,c}=targets.splice(idx,1)[0];
+    board[r][c]='F'+board[r][c]; // Prefix 'F' for frozen
   }
 }
 function spawnDmgAnim(txt,col){
@@ -734,30 +833,33 @@ function bossTriggerCounterAttack(){
     skillName=sk.name;skillCol=boss.color||'#ff4040';
     // Apply big boss skill effects
     if(skillIdx===0){
-      // 隱匿迷霧 — hide board blocks for 3s
-      bm.hideBlocksTimer=3000;
+      // 烈焰焚身
+      bm.burnTimer=3000; bm.dmgDebuffMult=0.80; bm.dmgDebuffTimer=3000;
     } else if(skillIdx===1){
-      // 垃圾轟炸 — +2 garbage rows
-      addGarb(2);
+      // 極寒冰凍
+      bm.freezeTimer=3000; freezeBoard(3);
     } else if(skillIdx===2){
-      // 鮮血再生 — heal 15-20%
-      const healPct=.15+Math.random()*.05;
-      const healed=Math.round(bm.bossMaxHP*healPct);
-      bm.bossHP=Math.min(bm.bossMaxHP,bm.bossHP+healed);
-      spawnDmgAnim(`+${healed.toLocaleString()}💚`,'#00e040');
-      updateBossHUD();
+      // 鮮血再生 — heal 15-20% (限一次)
+      if(!bm.healTriggered){
+        bm.healTriggered=true;
+        const healPct=.15+Math.random()*.05;
+        const healed=Math.round(bm.bossMaxHP*healPct);
+        bm.bossHP=Math.min(bm.bossMaxHP,bm.bossHP+healed);
+        spawnDmgAnim(`+${healed.toLocaleString()}💚`,'#00e040');
+        updateBossHUD();
+      } else {
+        // 如果已經觸發過，改為隨機一個小怪技能
+        bossApplySmallSkill(SMALL_MONSTERS[Math.floor(Math.random()*SMALL_MONSTERS.length)].skillId);
+      }
     } else if(skillIdx===3){
-      // 混沌裂變 — randomly remove 2-4 rows (no score)
-      const n=2+Math.floor(Math.random()*3);
-      const nonEmpty=[];
-      for(let r=HIDDEN;r<TOTAL;r++)if(board[r].some(c=>c))nonEmpty.push(r);
-      const targets=nonEmpty.sort(()=>Math.random()-.5).slice(0,n);
-      [...targets].sort((a,b)=>b-a).forEach(r=>{board.splice(r,1);board.unshift(new Array(COLS).fill(0));});
-      if(cur){while(hits(cur.type,cur.rot,cur.x,cur.y,board))cur.y--;}
-      spawnDmgAnim(`🌀 消除${targets.length}行`,'#ff8020');
+      // 虛弱詛咒
+      bm.weakenTimer=3000;
     } else if(skillIdx===4){
-      // 方塊腐化 — 5s corruption: spawned pieces get gray cells
-      bm.deformTimer=5000;
+      // 時空混亂
+      bm.chaosTimer=2000;
+    } else if(skillIdx===5){
+      // 虛空撕裂
+      bm.riftTimer=3000;
     }
     // chance for extra skill (10% per boss tier, stageIdx determines tier)
     const extraChance=boss.stageIdx*0.10;
@@ -769,9 +871,7 @@ function bossTriggerCounterAttack(){
         setTimeout(()=>{
           if(!bm.active)return;
           if(bm.ironWillCharges>0){bm.ironWillCharges--;return;}
-          if(extra===1)addGarb(1);
-          else if(extra===3){addGarb(1);}
-          else if(extra===4)bm.deformTimer=Math.max(bm.deformTimer,3000);
+	          bossApplySmallSkill(SMALL_MONSTERS[Math.floor(Math.random()*SMALL_MONSTERS.length)].skillId);
           spawnDmgAnim('⚡'+esk.name,skillCol);
         },1800);
       }
@@ -789,17 +889,22 @@ function bossTriggerCounterAttack(){
 function bossDealDamage(rawScore,isTspin,isTetris,isAC,nLines){
   if(!bm.active||bm.bossHP<=0)return;
   let dmg=rawScore;
-  if(bm.clearBonusMult>0)dmg*=(1+bm.clearBonusMult);
-  if(isTspin&&bm.tspinBonusMult>0)dmg*=(1+bm.tspinBonusMult);
-  if(bm.allEnhanceClear>0)dmg*=(1+bm.allEnhanceClear);
-  if(isTspin&&bm.allEnhanceTspin>0)dmg*=(1+bm.allEnhanceTspin);
-  if(bm.tradeHoldActive)dmg*=2.0;
-  dmg*=bm.armorBreakMult;
-  dmg+=bm.lineDmgBonus*nLines;
-  if(bm.counterLawCount>0)dmg*=Math.pow(bm.isBoss?1.1:0.5,bm.counterLawCount);
+  const isWeak = bm.weakenTimer > 0;
+  if(!isWeak){
+    if(bm.clearBonusMult>0)dmg*=(1+bm.clearBonusMult);
+    if(isTspin&&bm.tspinBonusMult>0)dmg*=(1+bm.tspinBonusMult);
+    if(bm.allEnhanceClear>0)dmg*=(1+bm.allEnhanceClear);
+    if(isTspin&&bm.allEnhanceTspin>0)dmg*=(1+bm.allEnhanceTspin);
+    if(bm.tradeHoldActive)dmg*=2.0;
+    dmg*=bm.armorBreakMult;
+    dmg+=bm.lineDmgBonus*nLines;
+    if(bm.counterLawCount>0)dmg*=Math.pow(bm.isBoss?1.1:0.5,bm.counterLawCount);
+    if(bm.comboBurstBonus>0&&combo>=1)dmg*=(1+bm.comboBurstBonus*combo);
+    if(b2b&&bm.b2bEnhanceActive)dmg*=2.0;
+  } else {
+    spawnDmgAnim('💀 虛弱：加成失效', '#aaa');
+  }
   dmg*=bm.dmgDebuffMult;
-  if(bm.comboBurstBonus>0&&combo>=1)dmg*=(1+bm.comboBurstBonus*combo);
-  if(b2b&&bm.b2bEnhanceActive)dmg*=2.0;
   dmg=Math.round(dmg);
   if(bm.bossShieldHP>0){
     const abs=Math.min(bm.bossShieldHP,dmg);
@@ -811,6 +916,13 @@ function bossDealDamage(rawScore,isTspin,isTetris,isAC,nLines){
   bm.stageDmgDealt+=dmg;bm.totalDmgDealt+=dmg;
   spawnDmgAnim(`-${dmg.toLocaleString()}`,'#ff4020');
   updateBossHUD();
+  
+  // 發射飛彈
+  const rect = mainCvs.getBoundingClientRect();
+  const startX = rect.left + (cur ? (cur.x + 2) * CELL : mainCvs.width / 2);
+  const startY = rect.top + (cur ? (cur.y - HIDDEN + 1) * CELL : mainCvs.height / 2);
+  spawnMissile(startX, startY, isTspin ? 'T' : nLines, isTspin ? 5 : nLines * 2);
+
   if(bm.bossHP<=0)bossStageCleared();
 }
 function bossStageCleared(){
@@ -833,8 +945,9 @@ function bossStartStage(stage){
   const sd=bossGetStageData(stage);
   bm.isBoss=sd.isBoss;bm.bossData=sd.data;bm.bossShieldHP=0;
   bm.stageDmgDealt=0;bm.stageStartTime=Date.now();bm.healTriggered=false;
-  bm.bossMaxHP=sd.isBoss?stage*10000:stage*(1000+Math.floor(Math.random()*1000));
+  bm.bossMaxHP=stage*5000;
   bm.bossHP=bm.bossMaxHP;
+  bm.COUNTER_BASE=10000;
   bm.counterTimer=bm.COUNTER_BASE+bm.counterDelayBonus;
   // clear timed effects
   bm.holdSealTimer=bm.darkTimer=bm.reverseTimer=bm.transpTimer=0;
@@ -1508,7 +1621,18 @@ function popBag(){if(bag.length<7)refillBag();return bag.shift();}
 function fillNext(){while(nextQ.length<NEXT_N+1)nextQ.push(popBag());}
 const g=(t,r)=>SHP[t].r[r];
 function spawn(type){const s=g(type,0),w=s[0].length;return{type,rot:0,x:Math.floor((COLS-w)/2),y:HIDDEN-2};}
-function hits(t,r,x,y,brd){const s=g(t,r);for(let i=0;i<s.length;i++)for(let j=0;j<s[i].length;j++){if(!s[i][j])continue;const br=y+i,bc=x+j;if(bc<0||bc>=COLS||br>=TOTAL)return true;if(br>=0&&brd[br][bc])return true;}return false;}
+function hits(t,r,x,y,brd){
+  const s=g(t,r);
+  for(let i=0;i<s.length;i++)for(let j=0;j<s[i].length;j++){if(!s[i][j])continue;const br=y+i,bc=x+j;if(bc<0||bc>=COLS||br>=TOTAL)return true;if(br>=0&&brd[br][bc])return true;}
+  if(cur && cur.mutations){
+    for(const m of cur.mutations){
+      const br=y+m.dr, bc=x+m.dc;
+      if(bc<0||bc>=COLS||br>=TOTAL)return true;
+      if(br>=0&&brd[br][bc])return true;
+    }
+  }
+  return false;
+}
 function ghostRow(){let gy=cur.y;while(!hits(cur.type,cur.rot,cur.x,gy+1,board))gy++;return gy;}
 function stackTopRow(){for(let r=HIDDEN;r<TOTAL;r++)if(board[r].some(c=>c))return r-HIDDEN;return ROWS;}
 function moveH(d){if(!cur||clearAnim)return;if(bm.active&&bm.inputIgnoreTimer>0)return;const rd=(bm.active&&bm.reverseTimer>0)?-d:d;if(!hits(cur.type,cur.rot,cur.x+rd,cur.y,board)){cur.x+=rd;tspinType='none';sndMove();if(lockOn&&lockMoves<15){lockTimer=0;lockMoves++;}}}
@@ -1516,17 +1640,70 @@ function rotate(dir){if(!cur||clearAnim)return;if(bm.active&&(bm.inputIgnoreTime
 function detectTSpin(){tspinType='none';if(cur.type!=='T')return;let n=0;for(const[r,c]of[[cur.y,cur.x],[cur.y,cur.x+2],[cur.y+2,cur.x],[cur.y+2,cur.x+2]])if(r<0||r>=TOTAL||c<0||c>=COLS||board[r][c])n++;if(n>=3)tspinType='full';}
 function hardDrop(){if(!cur)return;if(bm.active&&bm.inputIgnoreTimer>0)return;const landY=ghostRow();const d=landY-cur.y;if(d>0)addPop(`+${d*2}`,'#7799ff');score+=2*d;cur.y=landY;const hs=g(cur.type,cur.rot),hcol=SHP[cur.type].c;for(let ri=0;ri<hs.length;ri++)for(let ci=0;ci<hs[ri].length;ci++){if(!hs[ri][ci])continue;const dr=cur.y+ri-HIDDEN,dc=cur.x+ci;if(dr<0||dr>=ROWS)continue;for(let k=0;k<4;k++)particles.push({x:(dc+Math.random())*CELL,y:(dr+1)*CELL,vx:(Math.random()-.5)*CELL*.42,vy:-(Math.random()*.6+.2)*CELL*.3,col:hcol,age:0,maxAge:180+Math.random()*100,sz:Math.round(CELL*.13+Math.random()*CELL*.1)});}sndHardDrop();lockPiece();}
 function doHold(){if(!cur||holdUsed||clearAnim)return;if(bm.active&&(bm.holdDisabled||bm.holdSealTimer>0)){spawnDmgAnim('Hold封印','#f84');return;}holdUsed=true;sndHold();if(held===null){held=cur.type;spawnNext();}else{const t=held;held=cur.type;cur=spawn(t);if(hits(cur.type,cur.rot,cur.x,cur.y,board)){if(!MODES[curMode].zenMode)gameOver();else zenRecover();return;}}lockOn=false;lockTimer=0;lockMoves=0;tspinType='none';updateHoldBtn();}
-function lockPiece(){if(!cur)return;recordMove();const wasTspin=tspinType==='full';const s=g(cur.type,cur.rot),col=SHP[cur.type].c;let topOut=false;const impCells=[];for(let i=0;i<s.length;i++)for(let j=0;j<s[i].length;j++){if(!s[i][j])continue;const br=cur.y+i,bc=cur.x+j;if(br<HIDDEN)topOut=true;if(br>=0){board[br][bc]=col;impCells.push({dc:bc,dr:br-HIDDEN});}}lockFlash=90;lockImpact={cells:impCells,col,timer:85};if(wasTspin){const cx2=cur?(cur.x+1.5)*CELL:mainCvs.width/2,cy2=cur?(cur.y-HIDDEN+1.5)*CELL:mainCvs.height/2;tspinPulse={active:true,age:0,cx:cx2,cy:cy2};}sndLock(wasTspin);
-  // deform corruption
-  if(bm.active&&bm.deformTimer>0&&impCells.length>0){
-    const n=Math.min(impCells.length,1+Math.floor(Math.random()*2));
-    const shuffled=[...impCells].sort(()=>Math.random()-.5);
-    for(let i=0;i<n;i++){const{dc,dr}=shuffled[i];const br=dr+HIDDEN;if(br>=HIDDEN&&br<TOTAL)board[br][dc]='#484848';}
-  }
+function lockPiece(){
+  if(!cur)return;
+  recordMove();
+  const wasTspin=tspinType==='full';
+  const s=g(cur.type,cur.rot),col=SHP[cur.type].c;
+  let topOut=false;
+  const impCells=[];
+  const lockAt = (r, c) => {
+    const br=cur.y+r, bc=cur.x+c;
+    if(br<HIDDEN)topOut=true;
+    if(br>=0 && br<TOTAL){ board[br][bc]=col; impCells.push({dc:bc, dr:br-HIDDEN}); }
+  };
+  for(let i=0;i<s.length;i++)for(let j=0;j<s[i].length;j++)if(s[i][j])lockAt(i, j);
+  if(cur.mutations)for(const m of cur.mutations)lockAt(m.dr, m.dc);
+
+  lockFlash=90;lockImpact={cells:impCells,col,timer:85};
+  if(wasTspin){const cx2=(cur.x+1.5)*CELL,cy2=(cur.y-HIDDEN+1.5)*CELL;tspinPulse={active:true,age:0,cx:cx2,cy:cy2};}
+  sndLock(wasTspin);
   if(topOut){if(MODES[curMode].zenMode)zenRecover();else gameOver();return;}const cleared=[];for(let r=0;r<TOTAL;r++)if(board[r].every(c=>c))cleared.push(r);lockOn=false;lockTimer=0;lockMoves=0;holdUsed=false;cur=null;updateHoldBtn();if(!cleared.length){combo=-1;tspinType='none';if(garbQ>0){const gn=Math.min(garbQ,4);addGarb(gn);garbQ-=gn;}spawnNext();}else clearAnim={rows:cleared,timer:0,tspin:tspinType,n:cleared.length};tspinType='none';}
 function zenRecover(){for(let i=0;i<6;i++){board.splice(HIDDEN,1);board.splice(0,0,new Array(COLS).fill(0));}cur=null;lockOn=false;lockTimer=0;lockMoves=0;holdUsed=false;tspinType='none';updateHoldBtn();spawnNext();}
 function isSpecialClear(n,ts){return n===4||ts==='full'||ts==='mini';}
-function performClear(ca){const{rows,tspin,n}=ca;spawnClearParticles(rows);[...rows].sort((a,b)=>b-a).forEach(r=>board.splice(r,1));for(let i=0;i<n;i++)board.unshift(new Array(COLS).fill(0));combo++;const atkLines=calcAtk(n,tspin,combo);totalAtk+=atkLines;if(atkLines>0&&curMode==='battle'){triggerPlayerAtk(n);if(ai.garbQ!==undefined)ai.garbQ+=atkLines;}lines+=n;const isSpec=isSpecialClear(n,tspin);const b2bBonus=b2b&&isSpec;let gained=calcScore(n,tspin,level);if(b2bBonus)gained=Math.floor(gained*1.5);if(isSpec){b2bCount=b2bBonus?b2bCount+1:1;}else{b2b=false;b2bCount=0;}b2b=isSpec;score+=gained;const isAC=board.slice(HIDDEN).every(r=>r.every(c=>!c));if(bm.active&&!bm.nextStageQueued)bossDealDamage(gained,tspin==='full',n===4,isAC,n);if(isAC){score+=3500*level;allClearFlash=600;sndAllClear();vib([60,20,80,20,100]);addPop('ALL CLEAR!','#fffbe0',true);spawnBurstParticles(mainCvs.width/2,mainCvs.height/2,'#fffbe0',36,CELL*.42);spawnBurstParticles(mainCvs.width/2,mainCvs.height/2,'#00e8e8',28,CELL*.58);}const pt=tspin==='full'?`T-SPIN +${gained}`:n===4?`TETRIS +${gained}`:`+${gained}`;addPop(pt+(b2bBonus?' B2B!':''),tspin==='full'?'#d070ff':n===4?'#00ffee':'#ffe040');if(tspin==='full')spawnBurstParticles(mainCvs.width/2,mainCvs.height*.4,'#c040ff',20,CELL*.32);prevLevel=level;if(MODES[curMode].autoUp)level=Math.min(15,1+Math.floor(lines/10));if(level>prevLevel){showLvUp();bgmStep=0;}if(n===4)vib([40,15,40,15,60]);else if(n>=2)vib([30,10,30]);else vib(22);playSnd(combo);const lv=comboLv(combo);if(lv>=1){if(lv>=3)triggerShake();sndComboLv(lv);comboBanner={val:combo+1,age:0,maxAge:750+lv*120};}showMsg(n,tspin,combo,b2bBonus);if(curMode==='sprint'&&lines>=40&&!sprintDone){sprintDone=true;sprintFinish();}if(garbQ>0){const gn=Math.min(garbQ,4);addGarb(gn);garbQ-=gn;}spawnNext();updateUI();}
+function performClear(ca){
+  const{rows,tspin,n}=ca;
+  
+  // 冰凍判定邏輯
+  let actualClearedRows = [];
+  let frozenHandled = false;
+
+  for(const r of rows){
+    let hasFrozen = false;
+    for(let c=0; c<COLS; c++){
+      if(typeof board[r][c] === 'string' && board[r][c].startsWith('F')){
+        board[r][c] = board[r][c].slice(1); // 解除冰凍，變回原本顏色
+        hasFrozen = true;
+      }
+    }
+    if(hasFrozen){
+      frozenHandled = true;
+    } else {
+      actualClearedRows.push(r);
+    }
+  }
+
+  if(frozenHandled){
+    spawnDmgAnim('❄️ 冰凍解除！', '#00f0ff');
+    sndGarb(); // 使用一個重音效
+  }
+
+  spawnClearParticles(actualClearedRows);
+  [...actualClearedRows].sort((a,b)=>b-a).forEach(r=>board.splice(r,1));
+  for(let i=0; i<actualClearedRows.length; i++) board.unshift(new Array(COLS).fill(0));
+  
+  const actualN = actualClearedRows.length;
+  if(actualN === 0 && frozenHandled){
+    // 如果沒有任何一行被真正消除（只是解凍），中斷 Combo 並繼續
+    combo = -1;
+    spawnNext();
+    updateUI();
+    return;
+  }
+  // 更新後續邏輯使用的 n
+  ca.n = actualN;
+  const nForLogic = actualN;
+combo++;const atkLines=calcAtk(actualN,tspin,combo);totalAtk+=atkLines;if(atkLines>0&&curMode==='battle'){triggerPlayerAtk(actualN);if(ai.garbQ!==undefined)ai.garbQ+=atkLines;}lines+=actualN;const isSpec=isSpecialClear(actualN,tspin);const b2bBonus=b2b&&isSpec;let gained=calcScore(actualN,tspin,level);if(b2bBonus)gained=Math.floor(gained*1.5);if(isSpec){b2bCount=b2bBonus?b2bCount+1:1;}else{b2b=false;b2bCount=0;}b2b=isSpec;score+=gained;const isAC=board.slice(HIDDEN).every(r=>r.every(c=>!c));if(bm.active&&!bm.nextStageQueued)bossDealDamage(gained,tspin==='full',actualN===4,isAC,actualN);if(isAC){score+=3500*level;allClearFlash=600;sndAllClear();vib([60,20,80,20,100]);addPop('ALL CLEAR!','#fffbe0',true);spawnBurstParticles(mainCvs.width/2,mainCvs.height/2,'#fffbe0',36,CELL*.42);spawnBurstParticles(mainCvs.width/2,mainCvs.height/2,'#00e8e8',28,CELL*.58);}const pt=tspin==='full'?`T-SPIN +${gained}`:actualN===4?`TETRIS +${gained}`:`+${gained}`;addPop(pt+(b2bBonus?' B2B!':''),tspin==='full'?'#d070ff':actualN===4?'#00ffee':'#ffe040');if(tspin==='full')spawnBurstParticles(mainCvs.width/2,mainCvs.height*.4,'#c040ff',20,CELL*.32);prevLevel=level;if(MODES[curMode].autoUp)level=Math.min(15,1+Math.floor(lines/10));if(level>prevLevel){showLvUp();bgmStep=0;}if(actualN===4)vib([40,15,40,15,60]);else if(actualN>=2)vib([30,10,30]);else vib(22);playSnd(combo);const lv=comboLv(combo);if(lv>=1){if(lv>=3)triggerShake();sndComboLv(lv);comboBanner={val:combo+1,age:0,maxAge:750+lv*120};}showMsg(actualN,tspin,combo,b2bBonus);if(curMode==='sprint'&&lines>=40&&!sprintDone){sprintDone=true;sprintFinish();}if(garbQ>0){const gn=Math.min(garbQ,4);addGarb(gn);garbQ-=gn;}spawnNext();updateUI();}
 function calcAtk(n,ts,cb){let b=ts==='full'?[0,2,4,6][Math.min(n,3)]:ts==='mini'?[0,0,1][Math.min(n,2)]:[0,0,1,2,4][Math.min(n,4)];if(board.slice(HIDDEN).every(r=>r.every(c=>!c)))b+=6;return b+Math.max(0,cb);}
 function calcScore(n,ts,lv){return(ts==='full'?[0,800,1200,1600][Math.min(n,3)]:ts==='mini'?[0,200,400][Math.min(n,2)]:[0,100,300,500,800][Math.min(n,4)])*lv;}
 function addGarb(n){
@@ -1537,7 +1714,55 @@ function addGarb(n){
   const gw=document.getElementById('garbWarn');gw.classList.remove('flash');void gw.offsetWidth;gw.classList.add('flash');
   sndGarb();vib([30,10,50]);
 }
-function spawnNext(){fillNext();cur=spawn(nextQ.shift());gravAcc=0;softAcc=0;if(hits(cur.type,cur.rot,cur.x,cur.y,board)){if(MODES[curMode].zenMode)zenRecover();else gameOver();}}
+function spawnNext(){
+  fillNext();
+  let type = nextQ.shift();
+  let isChaos = bm.active && bm.chaosTimer > 0;
+  let isCorrupt = bm.active && bm.corruptTimer > 0;
+
+  if(isChaos){
+    const others = TYPES.filter(t => t !== type);
+    type = others[Math.floor(Math.random() * others.length)];
+    bm.chaosTimer = 0;
+    spawnDmgAnim('🌪️ 混亂：方塊異變', '#ff0');
+  }
+
+  cur = spawn(type);
+
+  let mutationCount = 0;
+  if(isChaos) mutationCount = 2;
+  else if(isCorrupt && Math.random() < 0.5) mutationCount = 1;
+
+  if(mutationCount > 0){
+    const originalShape = g(cur.type, 0);
+    cur.mutations = []; 
+    let added = 0;
+    for(let attempt=0; attempt<30 && added < mutationCount; attempt++){
+      const ri = Math.floor(Math.random() * 4);
+      const ci = Math.floor(Math.random() * 4);
+      if((ri >= originalShape.length || ci >= originalShape[0].length || !originalShape[ri][ci]) && !cur.mutations.some(m => m.dr === ri && m.dc === ci)){
+        let hasNeighbor = false;
+        for(let dr=-1; dr<=1; dr++) {
+          for(let dc=-1; dc<=1; dc++) {
+            if(Math.abs(dr) + Math.abs(dc) !== 1) continue;
+            const nr = ri + dr, nc = ci + dc;
+            if(nr >= 0 && nr < originalShape.length && nc >= 0 && nc < originalShape[0].length){
+              if(originalShape[nr][nc]) hasNeighbor = true;
+            }
+            if(cur.mutations.some(m => m.dr === nr && m.dc === nc)) hasNeighbor = true;
+          }
+        }
+        if(hasNeighbor){
+          cur.mutations.push({dr: ri, dc: ci});
+          added++;
+        }
+      }
+    }
+    if(added > 0) spawnDmgAnim(isChaos ? '🌪️ 混亂：突變方塊' : '🌑 腐化：畸形方塊', isChaos ? '#ff0' : '#888');
+  }
+
+  gravAcc=0;softAcc=0;
+  if(hits(cur.type,cur.rot,cur.x,cur.y,board)){if(MODES[curMode].zenMode)zenRecover();else gameOver();}}
 function fmtMs(ms){const s=Math.floor(ms/1000),cs=Math.floor((ms%1000)/10);return`${String(s).padStart(2,'0')}'${String(cs).padStart(2,'0')}`;}
 function fmtTime(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60);return`${m}:${String(s%60).padStart(2,'0')}`;}
 function setGoScreen(title,col,det,best){const t=document.getElementById('goTitle');t.textContent=title;t.style.color=col;t.style.textShadow=`0 0 14px ${col}`;t.style.fontSize='clamp(1rem,5vw,1.6rem)';document.getElementById('goDetails').innerHTML=det;document.getElementById('goBest').textContent=best;document.getElementById('goScreen').classList.remove('hidden');}
@@ -1551,18 +1776,76 @@ function updateDangerBar(){const top=stackTopRow(),db=document.getElementById('d
 function openPause(){if(!running||paused)return;paused=true;stopBGM();document.getElementById('pauseOverlay').classList.remove('hidden');}
 function closePause(){paused=false;document.getElementById('pauseOverlay').classList.add('hidden');lastTs=performance.now();if(bgmEnabled)startBGM();}
 // DRAW
-function dcell(ctx2,px,py,col,alpha){const C=CELL;if(alpha!==undefined)ctx2.globalAlpha=alpha;ctx2.fillStyle=col;ctx2.fillRect(px+1,py+1,C-2,C-2);ctx2.fillStyle='rgba(255,255,255,.18)';ctx2.fillRect(px+1,py+1,C-2,3);ctx2.fillRect(px+1,py+1,3,C-2);ctx2.fillStyle='rgba(0,0,0,.22)';ctx2.fillRect(px+C-4,py+1,3,C-2);ctx2.fillRect(px+1,py+C-4,C-2,3);ctx2.globalAlpha=1;}
+function dcell(ctx2,px,py,col,alpha){
+  const C=CELL;
+  if(alpha!==undefined)ctx2.globalAlpha=alpha;
+  
+  let isFrozen = false;
+  let drawCol = col;
+  if(typeof col === 'string' && col.startsWith('F')){
+    isFrozen = true;
+    drawCol = '#00f0ff'; // 青藍亮色
+  }
+
+  ctx2.fillStyle=drawCol;
+  ctx2.fillRect(px+1,py+1,C-2,C-2);
+  
+  if(isFrozen){
+    // 冰凍視覺效果：亮色邊框與半透明覆蓋
+    ctx2.strokeStyle='rgba(255,255,255,0.8)';
+    ctx2.lineWidth=2;
+    ctx2.strokeRect(px+2,py+2,C-4,C-4);
+    ctx2.fillStyle='rgba(255,255,255,0.2)';
+    ctx2.fillRect(px+1,py+1,C-2,C-2);
+  } else {
+    ctx2.fillStyle='rgba(255,255,255,.18)';
+    ctx2.fillRect(px+1,py+1,C-2,3);
+    ctx2.fillRect(px+1,py+1,3,C-2);
+    ctx2.fillStyle='rgba(0,0,0,.22)';
+    ctx2.fillRect(px+C-4,py+1,3,C-2);
+    ctx2.fillRect(px+1,py+C-4,C-2,3);
+  }
+  ctx2.globalAlpha=1;
+}
 function drawMainBoard(dt){mainCtx.fillStyle='#0d0d1c';mainCtx.fillRect(0,0,mainCvs.width,mainCvs.height);mainCtx.strokeStyle='#131325';mainCtx.lineWidth=1;for(let r=0;r<=ROWS;r++){mainCtx.beginPath();mainCtx.moveTo(0,r*CELL);mainCtx.lineTo(COLS*CELL,r*CELL);mainCtx.stroke();}for(let c=0;c<=COLS;c++){mainCtx.beginPath();mainCtx.moveTo(c*CELL,0);mainCtx.lineTo(c*CELL,ROWS*CELL);mainCtx.stroke();}if(allClearFlash>0){allClearFlash-=dt;const t=allClearFlash/600;mainCtx.fillStyle=`hsla(${Math.round((1-t)*360)},100%,70%,${t*.55})`;mainCtx.fillRect(0,0,mainCvs.width,mainCvs.height);}if(lockFlash>0){lockFlash-=dt;const lf=lockFlash/90;mainCtx.fillStyle=`rgba(255,255,255,${lf*.18})`;mainCtx.fillRect(0,0,mainCvs.width,mainCvs.height);mainCtx.save();mainCtx.strokeStyle=`rgba(255,255,255,${lf*.7})`;mainCtx.lineWidth=3;mainCtx.shadowColor='#fff';mainCtx.shadowBlur=8*lf;mainCtx.strokeRect(1,1,mainCvs.width-2,mainCvs.height-2);mainCtx.restore();}if(curMode==='score'&&running){const rem=Math.max(0,180000-modeTimer);if(rem<30000){const urg=1-rem/30000;const spd=80+120*(1-urg);const pulse=Math.sin(Date.now()/spd)*.5+.5;mainCtx.save();mainCtx.strokeStyle=`rgba(255,${Math.round(40*(1-urg))},0,${.4+pulse*.6})`;mainCtx.lineWidth=(3+urg*6)*2;mainCtx.strokeRect(0,0,mainCvs.width,mainCvs.height);mainCtx.restore();}}const top=stackTopRow();if(top<8){const i=Math.pow((8-top)/8,.7);const gr=mainCtx.createLinearGradient(0,0,0,CELL*5);gr.addColorStop(0,`rgba(255,20,20,${i*.5})`);gr.addColorStop(1,'rgba(255,20,20,0)');mainCtx.fillStyle=gr;mainCtx.fillRect(0,0,COLS*CELL,CELL*5);}if(combo>=2&&running&&!clearAnim){const ci=Math.min(1,(combo-1)/8),hue=combo>=6?0:combo>=4?25:55,pulse=Math.sin(Date.now()/(130-combo*10))*.35+.65;mainCtx.save();mainCtx.strokeStyle=`hsla(${hue},100%,60%,${(.35+ci*.5)*pulse})`;mainCtx.lineWidth=(2+ci*10)*pulse;mainCtx.strokeRect(0,0,mainCvs.width,mainCvs.height);mainCtx.restore();}
 // Boss visual overlays on board
 if(bm.active&&bm.darkTimer>0){const da=Math.min(1,bm.darkTimer/5000)*.72;mainCtx.fillStyle=`rgba(0,0,0,${da})`;mainCtx.fillRect(0,0,mainCvs.width,mainCvs.height);}
 if(bm.active&&bm.blockBottomTimer>0){const pulse=Math.sin(Date.now()/180)*.2+.8;mainCtx.save();mainCtx.fillStyle=`rgba(80,0,0,${.45*pulse})`;mainCtx.fillRect(0,mainCvs.height-CELL*2,mainCvs.width,CELL*2);mainCtx.strokeStyle=`rgba(255,60,0,${.7*pulse})`;mainCtx.lineWidth=2;mainCtx.strokeRect(0,mainCvs.height-CELL*2,mainCvs.width,CELL*2);mainCtx.restore();}
 if(bm.active&&bm.blockCenterTimer>0){const pulse=Math.sin(Date.now()/200)*.2+.8;const cx=Math.floor(COLS/2);mainCtx.save();mainCtx.fillStyle=`rgba(0,80,80,${.4*pulse})`;for(let c=cx-1;c<=cx+1;c++)mainCtx.fillRect(c*CELL,0,CELL,mainCvs.height);mainCtx.strokeStyle=`rgba(0,200,200,${.6*pulse})`;mainCtx.lineWidth=1.5;mainCtx.strokeRect((cx-1)*CELL,0,CELL*3,mainCvs.height);mainCtx.restore();}
 const fs=new Set(clearAnim?clearAnim.rows:[]);if(clearAnim){const prog=clearAnim.timer/FLASH_MS;for(const r of clearAnim.rows){const vy=r-HIDDEN;if(vy<0)continue;mainCtx.fillStyle=`rgba(0,232,232,${Math.sin(prog*Math.PI)*.75})`;mainCtx.fillRect(0,vy*CELL,mainCvs.width,CELL);const bx=prog*mainCvs.width;mainCtx.save();mainCtx.fillStyle='rgba(255,255,255,0.92)';mainCtx.shadowColor='#00e8ff';mainCtx.shadowBlur=14;mainCtx.fillRect(bx-7,vy*CELL,14,CELL);mainCtx.restore();}}const fogActive=bm.active&&bm.hideBlocksTimer>0;
-for(let r=HIDDEN;r<TOTAL;r++){if(fs.has(r))continue;for(let c=0;c<COLS;c++)if(board[r][c]){if(fogActive){mainCtx.fillStyle='#1a1a2a';mainCtx.fillRect(c*CELL+1,(r-HIDDEN)*CELL+1,CELL-2,CELL-2);}else dcell(mainCtx,c*CELL,(r-HIDDEN)*CELL,board[r][c]);}}}
-function drawGhost(){if(!cur||clearAnim)return;const gy=ghostRow(),s=g(cur.type,cur.rot),col=SHP[cur.type].c;for(let r=0;r<s.length;r++)for(let c=0;c<s[r].length;c++){if(!s[r][c])continue;const dr=gy+r-HIDDEN,dc=cur.x+c;if(dr<0)continue;mainCtx.globalAlpha=.18;mainCtx.fillStyle=col;mainCtx.fillRect(dc*CELL+1,dr*CELL+1,CELL-2,CELL-2);mainCtx.globalAlpha=.5;mainCtx.strokeStyle=col;mainCtx.lineWidth=1.5;mainCtx.strokeRect(dc*CELL+1.5,dr*CELL+1.5,CELL-3,CELL-3);}mainCtx.globalAlpha=1;}
-function drawCur(){if(!cur||clearAnim)return;if(bm.active&&bm.transpTimer>0)return;const s=g(cur.type,cur.rot),col=SHP[cur.type].c;
-  if(cur.type==='T'&&tspinType==='full'){mainCtx.save();mainCtx.shadowColor='#c040ff';mainCtx.shadowBlur=16;const pulse=Math.sin(Date.now()/100)*.3+.7;mainCtx.globalAlpha=pulse;mainCtx.strokeStyle='#d060ff';mainCtx.lineWidth=2.5;for(let r=0;r<s.length;r++)for(let c=0;c<s[r].length;c++){if(!s[r][c])continue;const dr=cur.y+r-HIDDEN,dc=cur.x+c;if(dr<0)continue;mainCtx.strokeRect(dc*CELL+.5,dr*CELL+.5,CELL-1,CELL-1);}mainCtx.restore();}
-  for(let r=0;r<s.length;r++)for(let c=0;c<s[r].length;c++){if(!s[r][c])continue;const dr=cur.y+r-HIDDEN,dc=cur.x+c;if(dr<0)continue;dcell(mainCtx,dc*CELL,dr*CELL,col);}}
+	for(let r=HIDDEN;r<TOTAL;r++){
+    if(fs.has(r))continue;
+    const vy=r-HIDDEN;
+
+    for(let c=0;c<COLS;c++)if(board[r][c]){if(fogActive){mainCtx.fillStyle='#1a1a2a';mainCtx.fillRect(c*CELL+1,vy*CELL+1,CELL-2,CELL-2);}else dcell(mainCtx,c*CELL,vy*CELL,board[r][c]);}}
+  }
+function drawGhost(){
+  if(!cur||clearAnim)return;
+  const gy=ghostRow(),s=g(cur.type,cur.rot),col=SHP[cur.type].c;
+  const drawG = (r, c) => {
+    const dr=gy+r-HIDDEN,dc=cur.x+c;
+    if(dr<0)return;
+    mainCtx.globalAlpha=.18; mainCtx.fillStyle=col; mainCtx.fillRect(dc*CELL+1,dr*CELL+1,CELL-2,CELL-2);
+    mainCtx.globalAlpha=.5; mainCtx.strokeStyle=col; mainCtx.lineWidth=1.5; mainCtx.strokeRect(dc*CELL+1.5,dr*CELL+1.5,CELL-3,CELL-3);
+  };
+  for(let r=0;r<s.length;r++)for(let c=0;c<s[r].length;c++)if(s[r][c])drawG(r, c);
+  if(cur.mutations)for(const m of cur.mutations)drawG(m.dr, m.dc);
+  mainCtx.globalAlpha=1;
+}
+function drawCur(){
+  if(!cur||clearAnim)return;
+  if(bm.active&&bm.transpTimer>0)return;
+  const s=g(cur.type,cur.rot),col=SHP[cur.type].c;
+  if(cur.type==='T'&&tspinType==='full'){
+    mainCtx.save(); mainCtx.shadowColor='#c040ff'; mainCtx.shadowBlur=16; const pulse=Math.sin(Date.now()/100)*.3+.7; mainCtx.globalAlpha=pulse; mainCtx.strokeStyle='#d060ff'; mainCtx.lineWidth=2.5;
+    const drawS = (r, c) => { const dr=cur.y+r-HIDDEN,dc=cur.x+c; if(dr>=0)mainCtx.strokeRect(dc*CELL+.5,dr*CELL+.5,CELL-1,CELL-1); };
+    for(let r=0;r<s.length;r++)for(let c=0;c<s[r].length;c++)if(s[r][c])drawS(r, c);
+    if(cur.mutations)for(const m of cur.mutations)drawS(m.dr, m.dc);
+    mainCtx.restore();
+  }
+  for(let r=0;r<s.length;r++)for(let c=0;c<s[r].length;c++)if(s[r][c]){ const dr=cur.y+r-HIDDEN,dc=cur.x+c; if(dr>=0)dcell(mainCtx,dc*CELL,dr*CELL,col); }
+  if(cur.mutations)for(const m of cur.mutations){ const dr=cur.y+m.dr-HIDDEN,dc=cur.x+m.dc; if(dr>=0)dcell(mainCtx,dc*CELL,dr*CELL,col); }
+}
 function drawLock(){if(!lockOn||!cur||clearAnim)return;const ratio=Math.max(0,1-lockTimer/diffCfg(level).lockDelay),s=g(cur.type,cur.rot);mainCtx.fillStyle=`rgba(255,210,50,${ratio*.8})`;for(let r=0;r<s.length;r++)for(let c=0;c<s[r].length;c++){if(!s[r][c])continue;const dr=cur.y+r-HIDDEN,dc=cur.x+c;if(dr<0)continue;mainCtx.fillRect(dc*CELL+1,(dr+1)*CELL-4,CELL-2,3);}}
 function drawLockImpact(dt){if(!lockImpact)return;lockImpact.timer-=dt;if(lockImpact.timer<=0){lockImpact=null;return;}const prog=1-lockImpact.timer/85;const alpha=Math.max(0,(1-prog*1.4)*0.9);const exp=prog*CELL*0.65;mainCtx.save();mainCtx.strokeStyle=lockImpact.col;mainCtx.globalAlpha=alpha;mainCtx.lineWidth=2;for(const{dc,dr}of lockImpact.cells){if(dr<0)continue;mainCtx.strokeRect(dc*CELL-exp,dr*CELL-exp,CELL+exp*2,CELL+exp*2);}mainCtx.globalAlpha=1;mainCtx.restore();}
 function drawGarbBar(){if(!garbQ||curMode==='survival')return;const maxG=12,g=Math.min(garbQ,maxG),h=mainCvs.height,barH=(g/maxG)*h,bw=5,bx=mainCvs.width-bw;const pulse=Math.sin(Date.now()/120)*.3+.7;mainCtx.save();mainCtx.fillStyle=`rgba(255,40,0,${.25+.4*(g/maxG)})`;mainCtx.fillRect(bx,h-barH,bw,barH);mainCtx.fillStyle=`rgba(255,120,0,${.5*pulse})`;mainCtx.fillRect(bx,h-barH,bw,Math.min(6,barH));mainCtx.restore();}
@@ -1615,7 +1898,28 @@ function drawComboBanner(dt){
   if(lv>=3&&lv<5){const sub=['','','','TRIPLE!','QUAD!'][lv];mainCtx.font=`bold ${Math.round(fs*.35)}px 'Courier New',monospace`;mainCtx.shadowBlur=st.glowB*.5;mainCtx.globalAlpha=a*.8;mainCtx.fillText(sub,cx,cy+fs*.56);}
   mainCtx.restore();
 }
-function draw(dt){drawMainBoard(dt||0);drawGhost();drawCur();drawLock();drawLockImpact(dt||0);drawSprintBar();drawGarbBar();drawTspinPulse(dt||0);drawComboBanner(dt||0);drawParticles(dt||0);drawPops(dt||0);if(bm.active){drawBossFlash(dt||0);drawBossDmgAnims(dt||0);}drawHoldTo(holdDctx,holdD);drawHoldTo(holdPctx,holdP);drawHoldTo(holdLctx,holdL);if(holdBtlCtx&&holdBtl)drawHoldTo(holdBtlCtx,holdBtl);const hideNext=bm.active&&bm.hideNextTimer>0;
+function draw(dt){
+  drawMainBoard(dt||0);
+  drawGhost();
+  drawCur();
+  // 虛空撕裂遮蔽層：放在方塊繪製之後，UI 繪製之前
+  if(bm.active && bm.riftTimer > 0){
+    mainCtx.fillStyle = '#000'; // 完全不透明黑色
+    mainCtx.fillRect(0, 0, COLS * CELL, 3 * CELL);
+  }
+  drawLock();
+  drawLockImpact(dt||0);
+  drawSprintBar();
+  drawGarbBar();
+  drawTspinPulse(dt||0);
+  drawComboBanner(dt||0);
+  drawParticles(dt||0);
+  drawPops(dt||0);
+  if(bm.active){
+    drawBossFlash(dt||0);
+    drawBossDmgAnims(dt||0);
+  }
+  drawHoldTo(holdDctx,holdD);drawHoldTo(holdPctx,holdP);drawHoldTo(holdLctx,holdL);if(holdBtlCtx&&holdBtl)drawHoldTo(holdBtlCtx,holdBtl);const hideNext=bm.active&&bm.hideNextTimer>0;
 if(!hideNext){drawNextTo(nextDctx,nextD,NEXT_N);drawNextTo(nextPctx,nextP,3);drawNextTo(nextLctx,nextL,3);}
 else{[{c:nextDctx,v:nextD},{c:nextPctx,v:nextP},{c:nextLctx,v:nextL}].forEach(({c,v})=>{if(c&&v){c.fillStyle='#0c0c1c';c.fillRect(0,0,v.width,v.height);c.fillStyle='#333';c.font=`${Math.round(v.width*.22)}px monospace`;c.textAlign='center';c.textBaseline='middle';c.fillText('?',v.width/2,v.height/2);c.textAlign='left';c.textBaseline='alphabetic';}});}
 if(nextBtlCtx&&nextBtl)drawNextTo(nextBtlCtx,nextBtl,NEXT_N);
@@ -1755,12 +2059,20 @@ function loop(ts){raf=requestAnimationFrame(loop);if(!running||paused)return;con
         bossTriggerCounterAttack();
       }
       // tick timed debuffs
+    if(bm.burnTimer>0)bm.burnTimer-=dt;
+    if(bm.freezeTimer>0)bm.freezeTimer-=dt;
+    if(bm.riftTimer>0)bm.riftTimer-=dt;
+    if(bm.corruptTimer>0)bm.corruptTimer-=dt;
+    if(bm.weakenTimer>0)bm.weakenTimer-=dt;
+    if(bm.chaosTimer>0)bm.chaosTimer-=dt;
+      if(bm.hideBlocksTimer>0)bm.hideBlocksTimer-=dt;
+      if(bm.dmgDebuffTimer>0){bm.dmgDebuffTimer-=dt;if(bm.dmgDebuffTimer<=0)bm.dmgDebuffMult=1.0;}
+      // 舊計時器清理
       if(bm.holdSealTimer>0)bm.holdSealTimer-=dt;
       if(bm.reverseTimer>0)bm.reverseTimer-=dt;
       if(bm.darkTimer>0)bm.darkTimer-=dt;
       if(bm.transpTimer>0)bm.transpTimer-=dt;
       if(bm.hideNextTimer>0)bm.hideNextTimer-=dt;
-      if(bm.hideBlocksTimer>0)bm.hideBlocksTimer-=dt;
       if(bm.gravBoostTimer>0)bm.gravBoostTimer-=dt;
       if(bm.fastLockTimer>0)bm.fastLockTimer-=dt;
       if(bm.dasSlowTimer>0)bm.dasSlowTimer-=dt;
@@ -1768,7 +2080,6 @@ function loop(ts){raf=requestAnimationFrame(loop);if(!running||paused)return;con
       if(bm.blockCenterTimer>0)bm.blockCenterTimer-=dt;
       if(bm.blockBottomTimer>0)bm.blockBottomTimer-=dt;
       if(bm.rotDelayTimer>0)bm.rotDelayTimer-=dt;
-      if(bm.dmgDebuffTimer>0){bm.dmgDebuffTimer-=dt;if(bm.dmgDebuffTimer<=0)bm.dmgDebuffMult=1.0;}
       if(bm.inputIgnoreTimer>0)bm.inputIgnoreTimer-=dt;
       updateBossHUD();
     }
@@ -1819,7 +2130,7 @@ function startBossMode(){
   bm.allEnhanceClear=0;bm.allEnhanceTspin=0;bm.armorBreakMult=1.0;
   bm.lineDmgBonus=0;bm.ironWillCharges=0;bm.counterDelayBonus=0;
   bm.comboBurstBonus=0;bm.b2bEnhanceActive=false;bm.counterLawCount=0;
-  bm.hasRevive=false;bm.reviveUsed=false;bm.COUNTER_BASE=5000;
+  bm.hasRevive=false;bm.reviveUsed=false;bm.COUNTER_BASE=10000;
   bm.dmgAnims=[];bm.nextStageQueued=false;
   bm.smallMonsterOrder=genSmallMonsterOrder();
   fillNext();spawnNext();
