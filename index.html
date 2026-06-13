@@ -193,17 +193,45 @@ h1{font-size:clamp(1.6rem,7vw,2.8rem);color:var(--c0);text-shadow:0 0 24px var(-
 		  opacity:0.6;animation:auraPulse 3s ease-in-out infinite;
 		}
 		@keyframes auraPulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.2);opacity:0.7}}
-		#monsterArt{
-		  font-size:4.5rem;text-shadow:0 0 30px rgba(255,0,0,0.6);
-		  animation:floatAnim 2.5s ease-in-out infinite;z-index:2;
-		  transition: transform 0.1s, filter 0.1s;
-		}
+				#monsterArt{
+				  font-size: 4.5rem;
+				  text-shadow: 0 0 30px rgba(255,0,0,0.6);
+				  z-index: 2;
+				  transition: transform 0.1s, filter 0.1s;
+				  display: inline-block;
+				  animation: floatAnim 2.5s ease-in-out infinite !important;
+				}
+				/* 移除舊的 cdRing 樣式 */
 		@keyframes floatAnim{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-15px) scale(1.05)}}
 		#monsterHitFlash{
 		  position:absolute;inset:0;background:rgba(255,255,255,0.6);opacity:0;pointer-events:none;z-index:3;
 		}
 		@keyframes hitFlashAnim{0%{opacity:1}100%{opacity:0}}
-		.hit-flash{animation:hitFlashAnim 0.2s ease-out forwards}
+			.hit-flash{animation:hitFlashAnim 0.2s ease-out forwards}
+			
+			/* 聖劍降落特效 */
+			#holySwordOverlay {
+			  position: absolute; inset: 0; pointer-events: none; z-index: 100; overflow: hidden; display: none;
+			}
+			.holy-sword {
+			  position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+			  font-size: 120px; filter: drop-shadow(0 0 20px #ffd700);
+			  animation: swordDrop 0.6s cubic-bezier(0.6, 0, 0.4, 1) forwards;
+			}
+			@keyframes swordDrop {
+			  0% { top: -200px; opacity: 0; transform: translateX(-50%) scale(1.5); }
+			  70% { top: 40%; opacity: 1; transform: translateX(-50%) scale(1); }
+			  100% { top: 50%; opacity: 0; transform: translateX(-50%) scale(1.2); }
+			}
+			.sword-impact {
+			  position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%);
+			  width: 200px; height: 200px; background: radial-gradient(circle, #fff 0%, #ffd700 50%, transparent 70%);
+			  border-radius: 50%; opacity: 0; animation: swordImpact 0.5s ease-out 0.4s forwards;
+			}
+			@keyframes swordImpact {
+			  0% { transform: translate(-50%, -50%) scale(0.1); opacity: 1; }
+			  100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+			}
 		@keyframes monsterShake{0%{transform:translate(0,0)}25%{transform:translate(-8px,4px) scale(0.9)}50%{transform:translate(8px,-4px) scale(1.1)}75%{transform:translate(-4px,-8px)}100%{transform:translate(0,0)}}
 		.monster-hit{animation: monsterShake 0.2s ease-in-out !important;}
 		/* Explosion Particles */
@@ -418,8 +446,13 @@ h1{font-size:clamp(1.6rem,7vw,2.8rem);color:var(--c0);text-shadow:0 0 24px var(-
   <div class="hdt">瞬降</div>
 </div>
 <!-- Game area -->
-<div id="gameWrap">
-  <div id="deskL">
+    <div id="gameWrap">
+      <div id="topMaskOverlay"></div>
+  <div id="holySwordOverlay">
+    <div class="holy-sword">🗡️</div>
+    <div class="sword-impact"></div>
+  </div>
+      <div id="deskL">
     <div id="deskLStats" style="display:flex;flex-direction:column;gap:5px;width:100%">
       <div class="box hud-frame"><div class="lbl">HOLD</div><canvas class="mini-cvs" id="holdD" width="74" height="74"></canvas></div>
       <div class="box" id="modeHUD"><div class="mhLbl" id="mhLbl">TIME</div><div class="mhVal normal" id="mhVal">--</div></div>
@@ -443,11 +476,11 @@ h1{font-size:clamp(1.6rem,7vw,2.8rem);color:var(--c0);text-shadow:0 0 24px var(-
       <div class="box" id="modeEl" style="font-size:.52rem;color:#444;text-align:center;line-height:1.9"></div>
     </div>
 		    <div id="deskRBoss" style="display:none;flex-direction:column;gap:4px;width:100%">
-		      <div id="monsterView">
-		        <div id="monsterAura"></div>
-		        <div id="monsterArt">👹</div>
-		        <div id="monsterHitFlash"></div>
-		      </div>
+			      <div id="monsterView">
+			        <div id="monsterAura"></div>
+				        <div id="monsterArt">👹</div>
+			        <div id="monsterHitFlash"></div>
+			      </div>
 	      <div id="bmName" style="font-size:.58rem;color:#f66;text-align:center;font-weight:bold;letter-spacing:1px"></div>
 	      <div id="bmStage" style="font-size:.45rem;color:#888;text-align:center"></div>
       <div style="padding:0 3px">
@@ -457,8 +490,16 @@ h1{font-size:clamp(1.6rem,7vw,2.8rem);color:var(--c0);text-shadow:0 0 24px var(-
         <div id="bmHPNum" style="font-size:.43rem;color:#f88;text-align:center;margin-top:1px"></div>
       </div>
       <div id="bmTimer" style="font-size:.6rem;color:#fa0;text-align:center;font-weight:bold"></div>
-      <div id="bmSkills" style="font-size:.41rem;color:#664040;text-align:center;line-height:1.7;border-top:1px solid #2a1020;padding-top:3px"></div>
-      <div id="bmDebuff" style="font-size:.41rem;color:#f88;text-align:center;min-height:0.9em;line-height:1.6"></div>
+	      <div id="bmSkills" style="font-size:.41rem;color:#664040;text-align:center;line-height:1.7;border-top:1px solid #2a1020;padding-top:3px"></div>
+		      <div id="cdRingContainer" style="position:relative;width:50px;height:50px;margin:5px auto;pointer-events:none;z-index:1;">
+		        <svg width="50" height="50" viewBox="0 0 50 50">
+		          <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="6" />
+		          <circle id="cdRingCircle" cx="25" cy="25" r="20" fill="none" stroke="#fa0" stroke-width="6" 
+		            stroke-dasharray="125.6" stroke-dashoffset="0" stroke-linecap="round"
+		            transform="rotate(-90 25 25)" />
+		        </svg>
+		      </div>
+	      <div id="bmDebuff" style="font-size:.41rem;color:#f88;text-align:center;min-height:0.9em;line-height:1.6"></div>
       <div id="bmCards" style="font-size:.39rem;color:#aaa;text-align:center;line-height:1.6;border-top:1px solid #2a1020;padding-top:2px;min-height:0.9em"></div>
       <div class="box hud-frame" style="padding:3px"><div class="lbl">NEXT</div><canvas class="mini-cvs" id="nextBossD" width="74" height="198"></canvas></div>
     </div>
@@ -518,36 +559,35 @@ let curMode='free';
 
 // ── BOSS MODE DATA ──
 const SMALL_MONSTERS=[
-  {id:0, name:'烈焰惡魔', art:'🔥', skill:'燃燒：傷害降低20% (3秒)', skillId:'burn'},
-  {id:1, name:'寒冰精靈', art:'❄️', skill:'冰凍：3個方塊需額外消除', skillId:'freeze'},
-  {id:2, name:'腐敗殭屍', art:'🌑', skill:'腐化：新方塊50%機率畸形', skillId:'corrupt'},
-  {id:3, name:'虛弱幽靈', art:'💀', skill:'虛弱：加成失效 (3秒)', skillId:'weaken'},
-  {id:4, name:'混沌之子', art:'🌪️', skill:'混亂：下個必為異變方塊', skillId:'chaos'},
-  {id:5, name:'虛空行者', art:'🌌', skill:'虛空撕裂：隱藏頂部3格', skillId:'rift'},
-  {id:6, name:'烈焰惡魔', art:'🔥', skill:'燃燒：傷害降低20% (3秒)', skillId:'burn'},
-  {id:7, name:'冰封守衛', art:'❄️', skill:'冰凍：3個方塊需額外消除', skillId:'freeze'},
-  {id:8, name:'暗影行者', art:'🌑', skill:'腐化：新方塊50%機率畸形', skillId:'corrupt'},
-  {id:9, name:'凋零骸骨', art:'💀', skill:'虛弱：加成失效 (3秒)', skillId:'weaken'},
-  {id:10,name:'風暴之眼', art:'🌪️', skill:'混亂：下個必為異變方塊', skillId:'chaos'},
-  {id:11,name:'虛空撕裂者', art:'🌌', skill:'虛空撕裂：隱藏頂部3格', skillId:'rift'},
-  {id:12,name:'地獄火',   art:'🔥', skill:'燃燒：傷害降低20% (3秒)', skillId:'burn'},
-  {id:13,name:'極地妖精', art:'❄️', skill:'冰凍：3個方塊需額外消除', skillId:'freeze'},
-  {id:14,name:'深淵觸手', art:'🌑', skill:'腐化：新方塊50%機率畸形', skillId:'corrupt'},
-  {id:15,name:'死亡騎士', art:'💀', skill:'虛弱：加成失效 (3秒)', skillId:'weaken'},
-  {id:16,name:'颶風龍',   art:'🌪️', skill:'混亂：下個必為異變方塊', skillId:'chaos'},
-  {id:17,name:'虛空幻影', art:'🌌', skill:'虛空撕裂：隱藏頂部3格', skillId:'rift'},
-  {id:18,name:'灰燼領主', art:'🔥', skill:'燃燒：傷害降低20% (3秒)', skillId:'burn'},
-  {id:19,name:'永凍魔女', art:'❄️', skill:'冰凍：3個方塊需額外消除', skillId:'freeze'},
-  {id:20,name:'虛空蠕蟲', art:'🌑', skill:'腐化：新方塊50%機率畸形', skillId:'corrupt'},
-  {id:21,name:'幽冥獵犬', art:'💀', skill:'虛弱：加成失效 (3秒)', skillId:'weaken'},
-  {id:22,name:'時空幻影', art:'🌪️', skill:'混亂：下個必為異變方塊', skillId:'chaos'},
-  {id:23,name:'虛空祭司', art:'🌌', skill:'虛空撕裂：隱藏頂部3格', skillId:'rift'},
-  {id:24,name:'赤紅使徒', art:'🔥', skill:'燃燒：傷害降低20% (3秒)', skillId:'burn'},
-  {id:25,name:'冰晶龍',   art:'❄️', skill:'冰凍：3個方塊需額外消除', skillId:'freeze'},
-  {id:26,name:'蝕骨者',   art:'🌑', skill:'腐化：新方塊50%機率畸形', skillId:'corrupt'},
-  {id:27,name:'斷魂鐮刀', art:'💀', skill:'虛弱：加成失效 (3秒)', skillId:'weaken'},
-  {id:28,name:'虛無風暴', art:'🌪️', skill:'混亂：下個必為異變方塊', skillId:'chaos'},
-  {id:29,name:'虛空龍',   art:'🌌', skill:'虛空撕裂：隱藏頂部3格', skillId:'rift'},
+  {id:1, name:'搗蛋小惡魔', art:'👿', skill:'遮蔽NEXT方塊3秒', skillId:'hideNextPiece'},
+  {id:2, name:'洞穴哥布林', art:'👺', skill:'咯咯咯：干擾操作1秒', skillId:'goblinGiggle'},
+  {id:3, name:'骷髏士兵', art:'💀', skill:'放棄吧勇者：干擾操作1秒', skillId:'skeletonTaunt'},
+  {id:4, name:'食屍鬼', art:'🧟', skill:'腐化：Combo下降2層', skillId:'comboDown2'},
+  {id:5, name:'骷髏王', art:'👑', skill:'骷髏幻影：干擾視線3秒', skillId:'skeletonVision'},
+  {id:6, name:'地獄蝙蝠', art:'🦇', skill:'禁錮：無法旋轉2秒', skillId:'rotSeal2'},
+  {id:7, name:'毒沼史萊姆', art:'🫧', skill:'劇毒：方塊暫時變色3秒', skillId:'colorPoison'},
+  {id:8, name:'詛詛巫師', art:'🧙', skill:'封印：Hold封印2秒', skillId:'holdSeal2'},
+  {id:9, name:'牛頭魔', art:'🐂', skill:'震地：畫面晃動4秒', skillId:'shake4'},
+  {id:10,name:'地獄公爵', art:'👿', skill:'黑暗：畫面變暗1.5秒且Combo歸零', skillId:'darkReset'},
+  {id:11,name:'冰霜妖精', art:'🧚', skill:'寒冰：旋轉封印2秒', skillId:'rotSeal2'},
+  {id:12,name:'冰霜巨人', art:'🏔️', skill:'冰川：只掉落I方塊2秒', skillId:'onlyI'},
+  {id:13,name:'深海魔女', art:'🐙', skill:'海嘯：畫面晃動4秒', skillId:'shake4'},
+  {id:14,name:'瘟疫醫生', art:'🎭', skill:'瘟疫：傷害降低20%', skillId:'dmgDebuff20'},
+  {id:15,name:'深淵女王', art:'👸', skill:'深淵：Next區域隱藏4秒', skillId:'hideNextArea'},
+  {id:16,name:'石像鬼', art:'🗿', skill:'石化：魔物冷眼干擾1秒', skillId:'gargoyleGaze'},
+  {id:17,name:'冥河擺渡人', art:'⛵', skill:'擺渡：清空畫面方塊後離開', skillId:'clearBoardExit'},
+  {id:18,name:'亡靈祭司', art:'🦴', skill:'神聖治療：回血20%', skillId:'holyHeal20'},
+  {id:19,name:'地獄犬', art:'🐕', skill:'咆哮：吼吼吼干擾1秒', skillId:'dogBark'},
+  {id:20,name:'深淵魔將', art:'⚔️', skill:'魔將：畫面晃動8秒', skillId:'shake8'},
+  {id:21,name:'光翼天使', art:'👼', skill:'光羽：傷害降低40%持續8秒', skillId:'dmgDebuff40'},
+  {id:22,name:'聖堂守衛', art:'🛡️', skill:'聖盾：僅Combo可造成傷害6秒', skillId:'comboOnly'},
+  {id:23,name:'晨曦天使', art:'🌅', skill:'晨曦：隨機列無法消除3秒', skillId:'rowSeal'},
+  {id:24,name:'聖光使徒', art:'⛪', skill:'聖縛：軟降降低且封鎖硬降6秒', skillId:'dropSeal'},
+  {id:25,name:'熾天使米迦勒', art:'✨', skill:'熾天：遮擋畫面上方30%持續2秒', skillId:'topMask'},
+  {id:26,name:'雷霆天使', art:'⚡', skill:'雷霆：下降速度增加150%持續3秒', skillId:'speedBoost'},
+  {id:27,name:'審判官', art:'⚖️', skill:'審判：每4秒回血15%持續1次', skillId:'autoHeal'},
+  {id:28,name:'光輝戰神', art:'⚔️', skill:'聖劍降落：底部新增2排垃圾行', skillId:'holySword'},
+  {id:29,name:'聖域守門人', art:'🏛️', skill:'聖域：畫面震動且變灰5秒', skillId:'grayScale'},
 ];
 const BIG_BOSSES=[
   {name:'邪獄守門士',art:'👹',color:'#ff4040',desc:'地獄之門的守衛',skills:[1,2],stageIdx:0},
@@ -559,12 +599,8 @@ const BIG_BOSSES=[
   {name:'神滅者',    art:'☯️',color:'#ffffff',desc:'毀滅神明的存在', skills:[0,1,2,3,4],stageIdx:6},
 ];
 const BOSS_BIG_SKILLS=[
-  {name:'烈焰焚身',desc:'燃燒：傷害降低20% (3秒)'},
-  {name:'極寒冰凍',desc:'冰凍：3個方塊需額外消除'},
-  {name:'鮮血再生',desc:'恢復15-20% HP (限一次)'},
-  {name:'虛弱詛咒',desc:'虛弱：加成失效 (3秒)'},
-  {name:'時空混亂',desc:'混亂：下個必為異變方塊'},
-  {name:'虛空撕裂',desc:'虛空撕裂：隱藏頂部3格'},
+  {name:'鮮血再生',desc:'恢復25% HP'},
+  {name:'魔物大軍',desc:'隨機施放小怪技能'},
 ];
 const CARD_POOL=[
   {id:'clearBonus', icon:'💡',name:'清除加成I',  desc:'+2%消除傷害（可疊加）',stackable:true},
@@ -590,11 +626,14 @@ const bm={
   counterTimer:5000,COUNTER_BASE:5000,
   smallMonsterOrder:[],
   healTriggered:false,
-  // timed effects (ms remaining)
-  burnTimer:0, freezeTimer:0, riftTimer:0, corruptTimer:0, weakenTimer:0, chaosTimer:0,
-  dmgDebuffMult:1.0, dmgDebuffTimer:0, hideBlocksTimer:0,
-  // 舊的計時器保留但不再由技能觸發，避免報錯
-  hideNextTimer:0,holdSealTimer:0,darkTimer:0,reverseTimer:0,
+	  // timed effects (ms remaining)
+	  riftTimer:0, 
+	  dmgDebuffMult:1.0, dmgDebuffTimer:0, 
+	  hideNextTimer:0,holdSealTimer:0,darkTimer:0,reverseTimer:0,
+	  rotSealTimer:0, colorPoisonTimer:0, shakeTimer:0, onlyITimer:0,
+	  comboOnlyTimer:0, rowSealTimer:0, sealedRow:-1, dropSealTimer:0,
+	  autoHealTimer:0, grayScaleTimer:0, 
+	  hideBlocksTimer:0,
   transpTimer:0,gravBoostTimer:0,fastLockTimer:0,dasSlowTimer:0,
   inputIgnoreTimer:0,rotDelayTimer:0,deformTimer:0,blockCenterTimer:0,blockBottomTimer:0,
   attackFlash:{timer:0,name:'',col:'#ff4040'},
@@ -627,7 +666,9 @@ function bossGetStageData(stage){
   if(stage%6===0){const idx=stage/6-1;return{isBoss:true,data:BIG_BOSSES[idx]};}
   const bigsBefore=Math.floor((stage-1)/6);
   const slot=(stage-1)-bigsBefore;
-  return{isBoss:false,data:SMALL_MONSTERS[bm.smallMonsterOrder[slot]]};
+  // 嚴格依序出現，ID = (slot % 29) + 1
+  const mId = (slot % 29) + 1;
+  return{isBoss:false,data:SMALL_MONSTERS.find(m => m.id === mId) || SMALL_MONSTERS[0]};
 }
 function updateBossHUD(){
   const pct=bm.bossMaxHP>0?Math.max(0,bm.bossHP/bm.bossMaxHP)*100:0;
@@ -641,39 +682,33 @@ function updateBossHUD(){
   // desk right panel
   const mArt=document.getElementById('monsterArt');if(mArt)mArt.textContent=bm.bossData?bm.bossData.art:'';
   
-  // 動態怪物氣場與背景顏色
-  const mView = document.getElementById('monsterView');
-  const mAura = document.getElementById('monsterAura');
-  const cdRing = document.getElementById('cdRing');
-  if(mView && mAura && bm.bossData){
-    const name = bm.bossData.name;
-    let color = '#ff0000'; // 預設紅色
-    if(name.includes('烈焰') || name.includes('火')) color = '#ff4500';
-    else if(name.includes('冰') || name.includes('寒')) color = '#00ffff';
-    else if(name.includes('虛空') || name.includes('冥')) color = '#8a2be2';
-    else if(name.includes('腐') || name.includes('毒')) color = '#32cd32';
-    else if(name.includes('混沌') || name.includes('雷')) color = '#ffd700';
-    
-    mAura.style.background = `radial-gradient(circle at center, ${color}66 0%, transparent 70%)`;
-    mView.style.boxShadow = `inset 0 0 40px ${color}33`;
-    mArt.style.filter = `drop-shadow(0 0 15px ${color}aa)`;
-    
-    // 環形 CD 條更新
-    if(cdRing){
-      const ringPct = Math.max(0, bm.counterTimer / (bm.COUNTER_BASE + bm.counterDelayBonus));
-      cdRing.style.borderTopColor = color;
-      cdRing.style.borderRightColor = ringPct > 0.25 ? color : 'transparent';
-      cdRing.style.borderBottomColor = ringPct > 0.5 ? color : 'transparent';
-      cdRing.style.borderLeftColor = ringPct > 0.75 ? color : 'transparent';
-      cdRing.style.transform = `rotate(${(1 - ringPct) * 360}deg)`;
+    // 動態怪物氣場與背景顏色
+    const mView = document.getElementById('monsterView');
+    const mAura = document.getElementById('monsterAura');
+    const cdRing = document.getElementById('cdRing');
+    if(mView && mAura && bm.bossData){
+      const color = bm.isBoss ? (bm.bossData.color || '#ff4040') : '#fa0';
+      
+      mAura.style.background = `radial-gradient(circle at center, ${color}44 0%, transparent 70%)`;
+      mView.style.boxShadow = `inset 0 0 40px ${color}22`;
+      mArt.style.filter = `drop-shadow(0 0 15px ${color}aa)`;
+      
+      // SVG 環形進度條更新
+      const cdCircle = document.getElementById('cdRingCircle');
+      if(cdCircle){
+        const ringPct = Math.max(0, bm.counterTimer / (bm.COUNTER_BASE + bm.counterDelayBonus));
+        const circumference = 2 * Math.PI * 20; // r=20
+        const offset = circumference * (1 - ringPct);
+        cdCircle.style.stroke = color;
+        cdCircle.style.strokeDashoffset = offset;
+      }
     }
-  }
 
   const bmN=document.getElementById('bmName');if(bmN)bmN.textContent=bm.bossData?bm.bossData.name:'';
   const bmS=document.getElementById('bmStage');if(bmS)bmS.textContent=`Stage ${bm.stage}/42 ${bm.isBoss?'⚠ BOSS':''}`;
   const bmHF=document.getElementById('bmHPFill');if(bmHF)bmHF.style.width=pct+'%';
   const bmHN=document.getElementById('bmHPNum');if(bmHN)bmHN.textContent=hpTxt;
-  const bmT=document.getElementById('bmTimer');if(bmT)bmT.textContent=`⚡反擊 ${(bm.counterTimer/1000).toFixed(1)}s`;
+  const bmT=document.getElementById('bmTimer');if(bmT)bmT.textContent=''; // 移除秒數文字顯示，純圓餅圖倒數
   // skills list
   const bmSk=document.getElementById('bmSkills');
   if(bmSk&&bm.bossData){
@@ -688,16 +723,33 @@ function updateBossHUD(){
   const bmD=document.getElementById('bmDebuff');
   if(bmD){
     const d=[];
-    if(bm.burnTimer>0)d.push(`🔥燃燒(${(bm.burnTimer/1000).toFixed(1)}s)`);
-    if(bm.freezeTimer>0)d.push(`❄️冰凍(${(bm.freezeTimer/1000).toFixed(1)}s)`);
-    if(bm.riftTimer>0)d.push(`🌌撕裂(${(bm.riftTimer/1000).toFixed(1)}s)`);
-    if(bm.corruptTimer>0)d.push(`🌑腐化(${(bm.corruptTimer/1000).toFixed(1)}s)`);
-    if(bm.weakenTimer>0)d.push(`💀虛弱(${(bm.weakenTimer/1000).toFixed(1)}s)`);
-    if(bm.chaosTimer>0)d.push(`🌪️混亂(${(bm.chaosTimer/1000).toFixed(1)}s)`);
-    if(bm.hideBlocksTimer>0)d.push(`🌫迷霧(${(bm.hideBlocksTimer/1000).toFixed(1)}s)`);
-    if(bm.dmgDebuffTimer>0 && bm.burnTimer <= 0)d.push(`💔傷害×${bm.dmgDebuffMult.toFixed(2)}(${(bm.dmgDebuffTimer/1000).toFixed(1)}s)`);
-    bmD.textContent=d.length?d.join('\n'):'';
+    if(bm.hideNextPieceTimer>0)d.push(`👿遮蔽`);
+    if(bm.dmgDebuffTimer>0)d.push(`🎭虛弱`);
+    if(bm.holdSealTimer>0)d.push(`🧙封印`);
+    if(bm.darkTimer>0)d.push(`🌑黑暗`);
+    if(bm.shakeTimer>0)d.push(`🫨晃動`);
+    if(bm.rotSealTimer>0)d.push(`⛓️禁錮`);
+    if(bm.colorPoisonTimer>0)d.push(`🫧劇毒`);
+    if(bm.onlyITimer>0)d.push(`🏔️冰川`);
+    if(bm.comboOnlyTimer>0)d.push(`🛡️聖盾`);
+    if(bm.rowSealTimer>0)d.push(`🌅晨曦`);
+    if(bm.dropSealTimer>0)d.push(`⛪聖縛`);
+    if(bm.topMaskTimer>0)d.push(`✨熾天`);
+    if(bm.speedBoostTimer>0)d.push(`⚡雷霆`);
+    if(bm.autoHealTimer>0)d.push(`⚖️審判`);
+    if(bm.grayScaleTimer>0)d.push(`🏛️聖域`);
+    bmD.textContent=d.length?d.join(' '):'';
   }
+  // topMask 視覺遮蔽
+  const mask = document.getElementById('topMaskOverlay');
+  if(mask){
+    if(bm.active && bm.topMaskTimer > 0){
+      mask.style.display = 'block';
+    } else {
+      mask.style.display = 'none';
+    }
+  }
+
   // acquired cards
   const bmC=document.getElementById('bmCards');
   if(bmC){
@@ -859,18 +911,31 @@ function bossApplySmallSkill(skillId){
     case 'holyHeal20': 
       const heal = Math.round(bm.bossMaxHP * 0.2);
       bm.bossHP = Math.min(bm.bossMaxHP, bm.bossHP + heal);
-      osc(440, 'sine', 0, 0.5, 0.3, 880); msg('Holy Heal', '#fff'); break;
+      msg('Holy Heal', '#fff'); break;
     case 'dogBark': msg('吼吼吼', '#f60'); break;
     case 'shake8': bm.shakeTimer = 8000; break;
     case 'dmgDebuff40': bm.dmgDebuffMult = 0.6; bm.dmgDebuffTimer = 8000; break;
     case 'comboOnly': bm.comboOnlyTimer = 6000; break;
     case 'rowSeal': bm.rowSealTimer = 3000; bm.sealedRow = Math.floor(Math.random()*ROWS)+HIDDEN; break;
     case 'dropSeal': bm.dropSealTimer = 6000; break;
-    case 'topMask': bm.riftTimer = 2000; break;
-    case 'speedBoost': bm.gravBoostTimer = 3000; break;
+    case 'topMask': bm.topMaskTimer = 2000; break;
+    case 'speedBoost': bm.speedBoostTimer = 3000; break;
     case 'autoHeal': bm.autoHealTimer = 4000; break;
-    case 'holySword': triggerShake(); msg('聖劍降落！', '#ffd700'); break;
-    case 'grayScale': bm.grayScaleTimer = 5000; bm.shakeTimer = 1000; break;
+    case 'holySword': 
+      const swordOverlay = document.getElementById('holySwordOverlay');
+      if(swordOverlay){
+        swordOverlay.style.display = 'block';
+        setTimeout(() => {
+          addGarbage(2);
+          triggerShake();
+          msg('聖劍降落！', '#ffd700');
+        }, 400);
+        setTimeout(() => { swordOverlay.style.display = 'none'; }, 1000);
+      } else {
+        triggerShake(); msg('聖劍降落！', '#ffd700'); addGarbage(2);
+      }
+      break;
+    case 'grayScale': bm.grayScaleTimer = 5000; bm.shakeTimer = 5000; break;
   }
   updateBossHUD();
 }
@@ -968,19 +1033,21 @@ function bossTriggerCounterAttack(){
   }
 
   let skillId = '';
+  let skillName = '';
   if(bm.isBoss){
-    // Boss 隨機施放一個小怪技能池中的技能
     const skIdx = Math.floor(Math.random() * SMALL_MONSTERS.length);
     skillId = SMALL_MONSTERS[skIdx].skillId;
+    skillName = SMALL_MONSTERS[skIdx].name;
   } else {
     skillId = boss.skillId;
+    skillName = boss.name;
   }
   
-	  bossApplySmallSkill(skillId);
-	  bm.counterTimer = bm.COUNTER_BASE + bm.counterDelayBonus;
+  bossApplySmallSkill(skillId);
+  bm.counterTimer = bm.COUNTER_BASE + bm.counterDelayBonus;
 
-	  const skillCol = bm.isBoss ? (bm.bossData.color || '#ff4040') : '#f44';
-	  bm.attackFlash={timer:650,name:bm.isBoss ? 'BOSS SKILL' : bm.bossData.skill,col:skillCol};
+  const skillCol = bm.isBoss ? (bm.bossData.color || '#ff4040') : '#fa0';
+  bm.attackFlash={timer:650,name:skillName,col:skillCol};
 	  const fl=document.getElementById('bossSkillFlash');
 	  if(fl){fl.style.background=`radial-gradient(ellipse at center,${skillCol}22 0%,transparent 70%)`;fl.style.border=`2px solid ${skillCol}88`;fl.classList.remove('active');void fl.offsetWidth;fl.classList.add('active');}
 	  sndGarb();vib([20,10,30]);
@@ -988,21 +1055,16 @@ function bossTriggerCounterAttack(){
 function bossDealDamage(rawScore,isTspin,isTetris,isAC,nLines){
   if(!bm.active||bm.bossHP<=0)return;
   let dmg=rawScore;
-  const isWeak = bm.weakenTimer > 0;
-  if(!isWeak){
-    if(bm.clearBonusMult>0)dmg*=(1+bm.clearBonusMult);
-    if(isTspin&&bm.tspinBonusMult>0)dmg*=(1+bm.tspinBonusMult);
-    if(bm.allEnhanceClear>0)dmg*=(1+bm.allEnhanceClear);
-    if(isTspin&&bm.allEnhanceTspin>0)dmg*=(1+bm.allEnhanceTspin);
-    if(bm.tradeHoldActive)dmg*=2.0;
-    dmg*=bm.armorBreakMult;
-    dmg+=bm.lineDmgBonus*nLines;
-    if(bm.counterLawCount>0)dmg*=Math.pow(bm.isBoss?1.1:0.5,bm.counterLawCount);
-    if(bm.comboBurstBonus>0&&combo>=1)dmg*=(1+bm.comboBurstBonus*combo);
-    if(b2b&&bm.b2bEnhanceActive)dmg*=2.0;
-  } else {
-    spawnDmgAnim('💀 虛弱：加成失效', '#aaa');
-  }
+  if(bm.clearBonusMult>0)dmg*=(1+bm.clearBonusMult);
+  if(isTspin&&bm.tspinBonusMult>0)dmg*=(1+bm.tspinBonusMult);
+  if(bm.allEnhanceClear>0)dmg*=(1+bm.allEnhanceClear);
+  if(isTspin&&bm.allEnhanceTspin>0)dmg*=(1+bm.allEnhanceTspin);
+  if(bm.tradeHoldActive)dmg*=2.0;
+  dmg*=bm.armorBreakMult;
+  dmg+=bm.lineDmgBonus*nLines;
+  if(bm.counterLawCount>0)dmg*=Math.pow(bm.isBoss?1.1:0.5,bm.counterLawCount);
+  if(bm.comboBurstBonus>0&&combo>=1)dmg*=(1+bm.comboBurstBonus*combo);
+  if(b2b&&bm.b2bEnhanceActive)dmg*=2.0;
   dmg*=bm.dmgDebuffMult;
   dmg=Math.round(dmg);
   if(bm.bossShieldHP>0){
@@ -1027,26 +1089,28 @@ function bossDealDamage(rawScore,isTspin,isTetris,isAC,nLines){
 function bossStageCleared(){
   running=false;cancelAnimationFrame(raf);
   bm.stagesCleared++;
-  const isBoss=bm.isBoss;
+  const isBoss = bm.isBoss;
   const nextStage = bm.stage + 1;
-  const shouldCard=(bm.stage%5===0)||isBoss;
+  const BOSS_STAGES = [6, 12, 18, 24, 30, 36, 42];
+  const isTargetBoss = BOSS_STAGES.includes(bm.stage);
+  const shouldCard = (bm.stage % 5 === 0) || isTargetBoss;
 
-  if(isBoss || nextStage > 42){
-    // Boss 戰或全通關，維持手動暫停
-    const sr=document.getElementById('stageResult');
-    const srT=document.getElementById('srTitle');
-    const srD=document.getElementById('srDetails');
-    const elapsed=Math.round((Date.now()-bm.stageStartTime)/1000);
-    if(srT){srT.textContent=isBoss?`⚔ BOSS 擊敗！`:`Stage ${bm.stage} 通關！`;srT.style.color=isBoss?'#ffd700':'#0f0';}
-    if(srD){srD.innerHTML=`傷害：${bm.stageDmgDealt.toLocaleString()}<br>累計傷害：${bm.totalDmgDealt.toLocaleString()}<br>用時：${elapsed}秒`;}
+  if (isTargetBoss || nextStage > 42) {
+    // 指定 Boss 關卡或全通關，維持手動暫停
+    const sr = document.getElementById('stageResult');
+    const srT = document.getElementById('srTitle');
+    const srD = document.getElementById('srDetails');
+    const elapsed = Math.round((Date.now() - bm.stageStartTime) / 1000);
+    if (srT) { srT.textContent = isTargetBoss ? `⚔ BOSS 擊敗！` : `Stage ${bm.stage} 通關！`; srT.style.color = isTargetBoss ? '#ffd700' : '#0f0'; }
+    if (srD) { srD.innerHTML = `傷害：${bm.stageDmgDealt.toLocaleString()}<br>累計傷害：${bm.totalDmgDealt.toLocaleString()}<br>用時：${elapsed}秒`; }
     sr.classList.remove('hidden');
-    document.getElementById('stageNextBtn').dataset.showCard=shouldCard?'1':'0';
+    document.getElementById('stageNextBtn').dataset.showCard = shouldCard ? '1' : '0';
   } else {
-    // 小怪戰，自動進入下一關，顯示預告窗
-    if(shouldCard){
-      showCardOverlay('關卡強化', () => startNextStageWithPreview(nextStage));
+    // 小怪關卡，直接進入下一關，實現無縫切換
+    if (shouldCard) {
+      showCardOverlay('關卡強化', () => bossStartStage(nextStage));
     } else {
-      startNextStageWithPreview(nextStage);
+      bossStartStage(nextStage);
     }
   }
 }
@@ -1088,12 +1152,14 @@ function bossStartStage(stage){
   bm.bossHP=bm.bossMaxHP;
   bm.COUNTER_BASE=(sd.isBoss?12000:8000);
   bm.counterTimer=bm.COUNTER_BASE+bm.counterDelayBonus;
-  // clear timed effects
-  bm.holdSealTimer=bm.darkTimer=bm.reverseTimer=bm.transpTimer=0;
-  bm.gravBoostTimer=bm.fastLockTimer=bm.dasSlowTimer=bm.deformTimer=0;
-  bm.blockCenterTimer=bm.blockBottomTimer=bm.hideBlocksTimer=0;
-  bm.inputIgnoreTimer=bm.rotDelayTimer=0;
-  bm.dmgDebuffMult=1.0;bm.dmgDebuffTimer=0;bm.attackFlash={timer:0,name:'',col:'#ff4040'};
+	  // clear timed effects
+	  bm.holdSealTimer=bm.darkTimer=bm.reverseTimer=bm.transpTimer=0;
+	  bm.gravBoostTimer=bm.fastLockTimer=bm.dasSlowTimer=bm.deformTimer=0;
+	  bm.blockCenterTimer=bm.blockBottomTimer=bm.hideBlocksTimer=0;
+	  bm.inputIgnoreTimer=bm.rotDelayTimer=0;
+	  bm.rotSealTimer=bm.colorPoisonTimer=bm.shakeTimer=bm.onlyITimer=0;
+	  bm.comboOnlyTimer=bm.rowSealTimer=bm.dropSealTimer=bm.autoHealTimer=bm.grayScaleTimer=0;
+	  bm.dmgDebuffMult=1.0;bm.dmgDebuffTimer=0;bm.attackFlash={timer:0,name:'',col:'#ff4040'};
   bm.dmgAnims=[];
   updateBossHUD();
   const el=document.getElementById('msgTxt');
@@ -1856,50 +1922,7 @@ function addGarb(n){
 function spawnNext(){
   fillNext();
   let type = nextQ.shift();
-  let isChaos = bm.active && bm.chaosTimer > 0;
-  let isCorrupt = bm.active && bm.corruptTimer > 0;
-
-  if(isChaos){
-    const others = TYPES.filter(t => t !== type);
-    type = others[Math.floor(Math.random() * others.length)];
-    bm.chaosTimer = 0;
-    spawnDmgAnim('🌪️ 混亂：方塊異變', '#ff0');
-  }
-
   cur = spawn(type);
-
-  let mutationCount = 0;
-  if(isChaos) mutationCount = 2;
-  else if(isCorrupt && Math.random() < 0.5) mutationCount = 1;
-
-  if(mutationCount > 0){
-    const originalShape = g(cur.type, 0);
-    cur.mutations = []; 
-    let added = 0;
-    for(let attempt=0; attempt<30 && added < mutationCount; attempt++){
-      const ri = Math.floor(Math.random() * 4);
-      const ci = Math.floor(Math.random() * 4);
-      if((ri >= originalShape.length || ci >= originalShape[0].length || !originalShape[ri][ci]) && !cur.mutations.some(m => m.dr === ri && m.dc === ci)){
-        let hasNeighbor = false;
-        for(let dr=-1; dr<=1; dr++) {
-          for(let dc=-1; dc<=1; dc++) {
-            if(Math.abs(dr) + Math.abs(dc) !== 1) continue;
-            const nr = ri + dr, nc = ci + dc;
-            if(nr >= 0 && nr < originalShape.length && nc >= 0 && nc < originalShape[0].length){
-              if(originalShape[nr][nc]) hasNeighbor = true;
-            }
-            if(cur.mutations.some(m => m.dr === nr && m.dc === nc)) hasNeighbor = true;
-          }
-        }
-        if(hasNeighbor){
-          cur.mutations.push({dr: ri, dc: ci});
-          added++;
-        }
-      }
-    }
-    if(added > 0) spawnDmgAnim(isChaos ? '🌪️ 混亂：突變方塊' : '🌑 腐化：畸形方塊', isChaos ? '#ff0' : '#888');
-  }
-
   gravAcc=0;softAcc=0;
   if(hits(cur.type,cur.rot,cur.x,cur.y,board)){if(MODES[curMode].zenMode)zenRecover();else gameOver();}}
 function fmtMs(ms){const s=Math.floor(ms/1000),cs=Math.floor((ms%1000)/10);return`${String(s).padStart(2,'0')}'${String(cs).padStart(2,'0')}`;}
@@ -1992,7 +2015,7 @@ function drawSprintBar(){if(curMode!=='sprint')return;const pct=Math.min(lines,4
 function drawPops(dt){for(const p of pops){p.age+=dt;const a=Math.max(0,1-p.age/p.maxAge);const y=p.y-(p.age/p.maxAge)*CELL*2.8;const fs=Math.max(9,Math.round(CELL*(p.big?.65:.5)));mainCtx.font=`bold ${fs}px 'Courier New',monospace`;mainCtx.globalAlpha=a;mainCtx.lineWidth=2.5;mainCtx.strokeStyle='rgba(0,0,0,.7)';mainCtx.strokeText(p.txt,p.x,y);mainCtx.fillStyle=p.col;mainCtx.fillText(p.txt,p.x,y);mainCtx.globalAlpha=1;}pops=pops.filter(p=>p.age<p.maxAge);}
 function miniDraw(ctx2,cvs,type){const W=cvs.width,H=cvs.height,C=Math.floor(Math.min(W,H)/4);ctx2.fillStyle='#0c0c1c';ctx2.fillRect(0,0,W,H);if(!type)return;const s=SHP[type].r[0],col=SHP[type].c,rows=s.length,cols=s[0].length;const ox=Math.floor((W-cols*C)/2),oy=Math.floor((H-rows*C)/2);for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(!s[r][c])continue;ctx2.fillStyle=col;ctx2.fillRect(ox+c*C+1,oy+r*C+1,C-2,C-2);ctx2.fillStyle='rgba(255,255,255,.18)';ctx2.fillRect(ox+c*C+1,oy+r*C+1,C-2,2);ctx2.fillRect(ox+c*C+1,oy+r*C+1,2,C-2);}}
 function drawHoldTo(ctx2,cvs){miniDraw(ctx2,cvs,held);if(holdUsed){ctx2.fillStyle='rgba(0,0,0,.55)';ctx2.fillRect(0,0,cvs.width,cvs.height);}}
-function drawNextTo(ctx2,cvs,nMax){const W=cvs.width,H=cvs.height,C=Math.floor(Math.min(W,H/nMax)/4),slotH=Math.floor(H/nMax);ctx2.fillStyle='#0c0c1c';ctx2.fillRect(0,0,W,H);for(let i=0;i<Math.min(nMax,nextQ.length);i++){const t=nextQ[i];if(!t)continue;const s=SHP[t].r[0],col=SHP[t].c,rows=s.length,cols=s[0].length;const ox=Math.floor((W-cols*C)/2),oy=i*slotH+Math.floor((slotH-rows*C)/2);for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(!s[r][c])continue;ctx2.fillStyle=col;ctx2.fillRect(ox+c*C+1,oy+r*C+1,C-2,C-2);ctx2.fillStyle='rgba(255,255,255,.18)';ctx2.fillRect(ox+c*C+1,oy+r*C+1,C-2,2);}}}
+function drawNextTo(ctx2,cvs,nMax){const W=cvs.width,H=cvs.height,C=Math.floor(Math.min(W,H/nMax)/4),slotH=Math.floor(H/nMax);ctx2.fillStyle='#0c0c1c';ctx2.fillRect(0,0,W,H);if(bm.active && bm.hideNextTimer > 0){ctx2.fillStyle='#333';ctx2.font=`bold ${Math.round(W*0.3)}px monospace`;ctx2.textAlign='center';ctx2.textBaseline='middle';ctx2.fillText('?',W/2,H/2);return;}for(let i=0;i<Math.min(nMax,nextQ.length);i++){const t=nextQ[i];if(!t)continue;const s=SHP[t].r[0],col=SHP[t].c,rows=s.length,cols=s[0].length;const ox=Math.floor((W-cols*C)/2),oy=i*slotH+Math.floor((slotH-rows*C)/2);for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(!s[r][c])continue;ctx2.fillStyle=col;ctx2.fillRect(ox+c*C+1,oy+r*C+1,C-2,C-2);ctx2.fillStyle='rgba(255,255,255,.18)';ctx2.fillRect(ox+c*C+1,oy+r*C+1,C-2,2);}}}
 // Combo level styles: lv 1=yellow subtle, 2=orange, 3=red-orange, 4=hot red+shake, 5=purple max
 const COMBO_LV_STYLE=[
   null,
@@ -2041,11 +2064,7 @@ function draw(dt){
   drawMainBoard(dt||0);
   drawGhost();
   drawCur();
-  // 虛空撕裂遮蔽層：放在方塊繪製之後，UI 繪製之前
-  if(bm.active && bm.riftTimer > 0){
-    mainCtx.fillStyle = '#000'; // 完全不透明黑色
-    mainCtx.fillRect(0, 0, COLS * CELL, 3 * CELL);
-  }
+  // 移除舊的遮蔽邏輯
   drawLock();
   drawLockImpact(dt||0);
   drawSprintBar();
@@ -2061,8 +2080,25 @@ function draw(dt){
   drawHoldTo(holdDctx,holdD);drawHoldTo(holdPctx,holdP);drawHoldTo(holdLctx,holdL);if(holdBtlCtx&&holdBtl)drawHoldTo(holdBtlCtx,holdBtl);const hideNext=bm.active&&bm.hideNextTimer>0;
 if(!hideNext){drawNextTo(nextDctx,nextD,NEXT_N);drawNextTo(nextPctx,nextP,3);drawNextTo(nextLctx,nextL,3);}
 else{[{c:nextDctx,v:nextD},{c:nextPctx,v:nextP},{c:nextLctx,v:nextL}].forEach(({c,v})=>{if(c&&v){c.fillStyle='#0c0c1c';c.fillRect(0,0,v.width,v.height);c.fillStyle='#333';c.font=`${Math.round(v.width*.22)}px monospace`;c.textAlign='center';c.textBaseline='middle';c.fillText('?',v.width/2,v.height/2);c.textAlign='left';c.textBaseline='alphabetic';}});}
-if(nextBtlCtx&&nextBtl)drawNextTo(nextBtlCtx,nextBtl,NEXT_N);
-if(bm.active&&nextBossDctx&&nextBossD){if(!hideNext)drawNextTo(nextBossDctx,nextBossD,3);else{nextBossDctx.fillStyle='#0c0c1c';nextBossDctx.fillRect(0,0,nextBossD.width,nextBossD.height);nextBossDctx.fillStyle='#333';nextBossDctx.font=`${Math.round(nextBossD.width*.22)}px monospace`;nextBossDctx.textAlign='center';nextBossDctx.textBaseline='middle';nextBossDctx.fillText('?',nextBossD.width/2,nextBossD.height/2);nextBossDctx.textAlign='left';nextBossDctx.textBaseline='alphabetic';}}}
+	if(nextBtlCtx&&nextBtl){
+		if(!hideNext) drawNextTo(nextBtlCtx,nextBtl,NEXT_N);
+		else {
+			nextBtlCtx.fillStyle='#0c0c1c';nextBtlCtx.fillRect(0,0,nextBtl.width,nextBtl.height);
+			nextBtlCtx.fillStyle='#333';nextBtlCtx.font=`${Math.round(nextBtl.width*.3)}px monospace`;
+			nextBtlCtx.textAlign='center';nextBtlCtx.textBaseline='middle';
+			nextBtlCtx.fillText('?',nextBtl.width/2,nextBtl.height/2);
+		}
+	}
+	if(bm.active&&nextBossDctx&&nextBossD){
+		if(!hideNext) drawNextTo(nextBossDctx,nextBossD,3);
+		else{
+			nextBossDctx.fillStyle='#0c0c1c';nextBossDctx.fillRect(0,0,nextBossD.width,nextBossD.height);
+			nextBossDctx.fillStyle='#333';nextBossDctx.font=`${Math.round(nextBossD.width*.3)}px monospace`;
+			nextBossDctx.textAlign='center';nextBossDctx.textBaseline='middle';
+			nextBossDctx.fillText('?',nextBossD.width/2,nextBossD.height/2);
+		}
+	}
+}
 function doCountdown(cb){counting=true;if(curMode!=='sprint'&&curMode!=='score'&&curMode!=='battle'&&curMode!=='boss'){counting=false;cb();return;}let n=3;draw(0);const tick=()=>{draw(0);mainCtx.fillStyle='rgba(0,0,0,.65)';mainCtx.fillRect(0,0,mainCvs.width,mainCvs.height);mainCtx.font=`bold ${Math.round(CELL*3.5)}px 'Courier New',monospace`;mainCtx.textAlign='center';mainCtx.textBaseline='middle';mainCtx.fillStyle=n>0?'#fff':'#0f6';mainCtx.shadowColor=mainCtx.fillStyle;mainCtx.shadowBlur=28;mainCtx.fillText(n>0?String(n):'GO!',mainCvs.width/2,mainCvs.height/2);mainCtx.shadowBlur=0;mainCtx.textAlign='left';mainCtx.textBaseline='alphabetic';if(n>0)osc(n===3?440:n===2?550:660,'square',0,.18,.25);else sndGoal();if(n<=0){setTimeout(()=>{counting=false;cb();},500);return;}n--;setTimeout(tick,850);};setTimeout(tick,50);}
 // UI
 function updateModeHUD(){const mh=document.getElementById('modeHUD'),mhV=document.getElementById('mhVal'),mhL=document.getElementById('mhLbl');const mb=document.getElementById('b2bBadge');mb.style.display=b2b&&b2bCount>0?'block':'none';if(b2b)mb.textContent=`B2B ×${b2bCount}`;if(curMode==='score'){const rem=Math.max(0,180000-modeTimer);mh.style.display='block';mhL.textContent='TIME';mhV.textContent=fmtTime(rem);mh.className='box '+(rem<30000?'danger':rem<60000?'normal':'good');document.getElementById('mModeL').textContent='時間';document.getElementById('mModeVal').textContent=fmtTime(rem);document.getElementById('mModeVal').style.color=rem<30000?'#f55':rem<60000?'#ff0':'#0f0';}else if(curMode==='sprint'){const rem=Math.max(0,40-lines);mh.style.display='block';mhL.textContent='行數';mhV.textContent=`${rem}行`;mh.className='box '+(rem<=10?'danger':rem<=20?'normal':'good');document.getElementById('mModeL').textContent='剩行';document.getElementById('mModeVal').textContent=String(rem);document.getElementById('mModeVal').style.color=rem<=10?'#f55':rem<=20?'#ff0':'var(--c0)';}else if(curMode==='survival'){mh.style.display='block';mhL.textContent='生存';mhV.textContent=fmtTime(modeTimer);mh.className='box normal';document.getElementById('mModeL').textContent='時間';document.getElementById('mModeVal').textContent=fmtTime(modeTimer);document.getElementById('mModeVal').style.color='var(--c0)';}else{mh.style.display='none';document.getElementById('mModeL').textContent='COMBO';document.getElementById('mModeVal').textContent=combo>=1?`×${combo+1}`:'-';document.getElementById('mModeVal').style.color='var(--c0)';}}
@@ -2198,28 +2234,22 @@ function loop(ts){raf=requestAnimationFrame(loop);if(!running||paused)return;con
         bossTriggerCounterAttack();
       }
       // tick timed debuffs
-    if(bm.burnTimer>0)bm.burnTimer-=dt;
-    if(bm.freezeTimer>0)bm.freezeTimer-=dt;
-    if(bm.riftTimer>0)bm.riftTimer-=dt;
-    if(bm.corruptTimer>0)bm.corruptTimer-=dt;
-    if(bm.weakenTimer>0)bm.weakenTimer-=dt;
-    if(bm.chaosTimer>0)bm.chaosTimer-=dt;
       if(bm.hideBlocksTimer>0)bm.hideBlocksTimer-=dt;
       if(bm.dmgDebuffTimer>0){bm.dmgDebuffTimer-=dt;if(bm.dmgDebuffTimer<=0)bm.dmgDebuffMult=1.0;}
-      // 舊計時器清理
       if(bm.holdSealTimer>0)bm.holdSealTimer-=dt;
-      if(bm.reverseTimer>0)bm.reverseTimer-=dt;
       if(bm.darkTimer>0)bm.darkTimer-=dt;
-      if(bm.transpTimer>0)bm.transpTimer-=dt;
-      if(bm.hideNextTimer>0)bm.hideNextTimer-=dt;
-      if(bm.gravBoostTimer>0)bm.gravBoostTimer-=dt;
-      if(bm.fastLockTimer>0)bm.fastLockTimer-=dt;
-      if(bm.dasSlowTimer>0)bm.dasSlowTimer-=dt;
-      if(bm.deformTimer>0)bm.deformTimer-=dt;
-      if(bm.blockCenterTimer>0)bm.blockCenterTimer-=dt;
-      if(bm.blockBottomTimer>0)bm.blockBottomTimer-=dt;
-      if(bm.rotDelayTimer>0)bm.rotDelayTimer-=dt;
-      if(bm.inputIgnoreTimer>0)bm.inputIgnoreTimer-=dt;
+      if(bm.shakeTimer>0)bm.shakeTimer-=dt;
+      if(bm.rotSealTimer>0)bm.rotSealTimer-=dt;
+      if(bm.colorPoisonTimer>0)bm.colorPoisonTimer-=dt;
+      if(bm.onlyITimer>0)bm.onlyITimer-=dt;
+      if(bm.comboOnlyTimer>0)bm.comboOnlyTimer-=dt;
+      if(bm.rowSealTimer>0)bm.rowSealTimer-=dt;
+      if(bm.dropSealTimer>0)bm.dropSealTimer-=dt;
+      if(bm.topMaskTimer>0)bm.topMaskTimer-=dt;
+      if(bm.speedBoostTimer>0)bm.speedBoostTimer-=dt;
+      if(bm.autoHealTimer>0)bm.autoHealTimer-=dt;
+      if(bm.grayScaleTimer>0)bm.grayScaleTimer-=dt;
+      if(bm.hideNextPieceTimer>0)bm.hideNextPieceTimer-=dt;
       updateBossHUD();
     }
   }
@@ -2228,14 +2258,12 @@ function loop(ts){raf=requestAnimationFrame(loop);if(!running||paused)return;con
   if(!cur)return;
   const _cfg=diffCfg(level);
   const cfg={
-    gravity: bm.active&&bm.gravBoostTimer>0 ? Math.max(16,Math.round(_cfg.gravity*.65)) : _cfg.gravity,
-    lockDelay: bm.active&&bm.fastLockTimer>0 ? Math.max(50,Math.round(_cfg.lockDelay*.35)) : _cfg.lockDelay,
-    softStep: _cfg.softStep,
+    gravity: bm.active&&bm.speedBoostTimer>0 ? Math.max(16,Math.round(_cfg.gravity*.4)) : _cfg.gravity,
+    lockDelay: _cfg.lockDelay,
+    softStep: bm.active&&bm.dropSealTimer>0 ? _cfg.softStep*3 : _cfg.softStep,
   };
-  const _DAS_eff = bm.active&&bm.dasSlowTimer>0 ? DAS*2 : DAS;
-  const _ARR_eff = bm.active&&bm.dasSlowTimer>0 ? ARR*2 : ARR;
-  handleDAS(dt,_DAS_eff,_ARR_eff);
-  const isSoft=(KB.soft.some(k=>hk[k])||touchSoft)&&!(bm.active&&bm.inputIgnoreTimer>0);
+  handleDAS(dt,DAS,ARR);
+  const isSoft=(KB.soft.some(k=>hk[k])||touchSoft);
   if(isSoft){softAcc+=dt;if(softAcc>=cfg.softStep){softAcc=0;if(!hits(cur.type,cur.rot,cur.x,cur.y+1,board)){cur.y++;score+=1;sndSoftDrop();if(lockOn){lockOn=false;lockTimer=0;}}else lockOn=true;}}
   else{softAcc=0;gravAcc+=dt;while(gravAcc>=cfg.gravity){gravAcc-=cfg.gravity;if(!hits(cur.type,cur.rot,cur.x,cur.y+1,board)){cur.y++;if(lockOn){lockOn=false;lockTimer=0;}}else lockOn=true;}}
   if(!lockOn&&hits(cur.type,cur.rot,cur.x,cur.y+1,board)){lockOn=true;lockTimer=0;}
