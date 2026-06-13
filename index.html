@@ -136,7 +136,7 @@ const SMALL_MONSTERS=[
 const BIG_BOSSES=[
   {name:'邪獄守門士',art:'👹',color:'#ff4040',desc:'地獄之門的守衛',skills:[1,2],stageIdx:0},
   {name:'深淵蛇神',  art:'🐍',color:'#8040ff',desc:'深淵的古蛇神靈',skills:[0,3],stageIdx:1},
-  {name:'混沌之眼',  art:'👁', color:'#ff8020',desc:'觀察一切的神眼', skills:[1,2,4],stageIdx:2},
+  {name:'深淵吞星獸．利維坦', art:'🌌', color:'#1a1a40', desc:'巨大的宇宙級怪物，身體由星空與黑洞組成', skills:[1,2,4], stageIdx:2},
   {name:'冥王撒旦',  art:'😈',color:'#ff2080',desc:'冥界的支配者',   skills:[0,2,3],stageIdx:3},
   {name:'虛空主宰',  art:'🌌',color:'#00c8ff',desc:'虛空的絕對統治者',skills:[0,1,2,3,4],stageIdx:4},
   {name:'終末天使',  art:'⚔️',color:'#ffd700',desc:'帶來終末的天使', skills:[0,1,2,3,4],stageIdx:5},
@@ -147,6 +147,7 @@ const BOSS_BIG_SKILLS=[
   {name:'黑暗制裁',desc:'畫面全黑1秒並封鎖Hold 2秒'},
   {name:'重力壓制',desc:'BOSS受傷降低30%持續4秒'},
   {name:'虛空裂縫',desc:'消除最底下1行方塊'},
+  {name:'能量虹吸',desc:'持續3秒，20%傷害轉換為BOSS護盾'},
 ];
 const CARD_POOL=[
 	  {id:'clearBonus', icon:'💡',name:'清除加成I',  desc:'+4%消除傷害（可疊加）',stackable:true},
@@ -178,7 +179,7 @@ const bm={
 	  comboOnlyTimer:0, rowSealTimer:0, sealedRow:-1, dropSealTimer:0,
 	  autoHealTimer:0, grayScaleTimer:0,
 	  topMaskTimer:0, skeletonVisionTimer:0, dogVisionTimer:0,
-	  bossDmgReduceTimer:0,
+	  bossDmgReduceTimer:0, siphonTimer:0,
 	  hideBlocksTimer:0,
 	  shakeIntervalId:null, shakeIntervalAcc:0,
   transpTimer:0,gravBoostTimer:0,fastLockTimer:0,dasSlowTimer:0,shakeAcc:0,
@@ -747,6 +748,12 @@ function bossDealDamage(rawScore,isTspin,isTetris,isAC,nLines){
   dmg*=bm.dmgDebuffMult;
   if(bm.active && bm.bossDmgReduceTimer > 0) dmg *= 0.7;
   dmg=Math.round(dmg);
+      if(bm.active && bm.siphonTimer > 0){
+        const siphon = Math.round(dmg * 0.2);
+        bm.bossShieldHP += siphon;
+        dmg -= siphon;
+        spawnDmgAnim(`🌀 虹吸 +${siphon.toLocaleString()}`, '#a0f');
+      }
   if(bm.bossShieldHP>0){
     const abs=Math.min(bm.bossShieldHP,dmg);
     bm.bossShieldHP-=abs;dmg-=abs;
@@ -1943,6 +1950,7 @@ function loop(ts){raf=requestAnimationFrame(loop);if(!running||paused)return;con
       if(bm.skeletonVisionTimer>0)bm.skeletonVisionTimer-=dt;
       if(bm.dogVisionTimer>0)bm.dogVisionTimer-=dt;
       if(bm.bossDmgReduceTimer>0)bm.bossDmgReduceTimer-=dt;
+      if(bm.siphonTimer>0)bm.siphonTimer-=dt;
       if(bm.speedBoostTimer>0)bm.speedBoostTimer-=dt;
       if(bm.autoHealTimer>0){
         bm.autoHealTimer-=dt;
