@@ -101,14 +101,14 @@
     #deskRBoss {
         display: none;
         flex-direction: column;
-        gap: 12px;
-        width: 100%;
-        max-width: 400px;
-        background: #050a10;
-        padding: 15px;
-        border: 1px solid #1a2a3a;
-        border-radius: 8px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        gap: 15px;
+        width: 380px;
+        background: linear-gradient(135deg, rgba(15,0,25,0.95), rgba(5,0,10,0.98));
+        padding: 130px 20px 20px;
+        border-left: 2px solid rgba(255,50,100,0.4);
+        backdrop-filter: blur(15px);
+        box-shadow: -15px 0 60px rgba(0,0,0,0.9);
+        overflow-y: auto;
     }
     .boss-panel-box {
         background: rgba(0, 0, 0, 0.4);
@@ -147,11 +147,12 @@
         text-align: center;
     }
     #bmHPNum {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         color: #fff;
         font-weight: bold;
-        margin-bottom: 8px;
-        font-family: monospace;
+        margin-bottom: 10px;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 1px;
     }
     .hp-bar-bg {
         height: 12px;
@@ -176,7 +177,9 @@
     .opponent-name-row {
         display: flex;
         align-items: center;
-        gap: 10px;
+        justify-content: center;
+        gap: 15px;
+        margin: 5px 0;
     }
     #bmName {
         font-size: 1.4rem;
@@ -309,18 +312,20 @@
     </div>
 
     <!-- 反擊倒數區域 -->
-    <div class="boss-panel-box counter-row">
+    <div class="boss-panel-box counter-row" style="position:relative; height: 80px; display:flex; align-items:center; justify-content: space-between; padding: 0 15px;">
         <div style="display:flex; flex-direction:column;">
-            <div class="boss-panel-label" style="text-align:left; margin-bottom:2px;">反擊倒數</div>
-            <div id="btTimer">2.2s</div>
+            <div class="boss-panel-label" style="text-align:left; margin-bottom:4px; font-size: 0.7rem; color: #888; letter-spacing: 1px;">反擊倒數</div>
+            <div id="btTimer" style="font-size: 1.8rem; color: #00ffff; font-weight: bold; font-family: 'Courier New', monospace; text-shadow: 0 0 15px rgba(0,255,255,0.5);">2.2s</div>
         </div>
-        <div class="cd-ring-small">
-            <svg width="40" height="40" viewBox="0 0 50 50">
-                <circle cx="25" cy="25" r="20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="5" />
-                <circle id="cdRingCircle" cx="25" cy="25" r="20" fill="none" stroke="#00ffff" stroke-width="5" 
-                        stroke-dasharray="125.6" stroke-dashoffset="0" stroke-linecap="round"
+        <div class="cd-ring-desktop" style="position:relative; width: 60px; height: 60px;">
+            <svg width="60" height="60" viewBox="0 0 50 50">
+                <circle cx="25" cy="25" r="22" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4" />
+                <circle id="cdRingCircle" cx="25" cy="25" r="22" fill="none" stroke="#00ffff" stroke-width="4" 
+                        stroke-dasharray="138.2" stroke-dashoffset="0" stroke-linecap="round"
+                        style="transition: stroke-dashoffset 0.1s linear, stroke 0.3s;"
                         transform="rotate(-90 25 25)" />
             </svg>
+            <div id="cdCountdown" style="position:absolute; inset:0; display:none; align-items:center; justify-content:center; font-size:0.8rem; color:#00ffff; font-weight:bold;">2.2</div>
         </div>
     </div>
     
@@ -569,7 +574,7 @@ function updateBossHUD(){
   const cdCircle = document.getElementById('cdRingCircle');
   if(cdCircle){
     const ringPct = Math.max(0, bm.counterTimer / (bm.COUNTER_BASE + bm.counterDelayBonus));
-    const circumference = 2 * Math.PI * 20;
+    const circumference = 2 * Math.PI * 22;
     cdCircle.style.strokeDashoffset = circumference * (1 - ringPct);
   }
   const atkVal = document.getElementById('atkVal');
@@ -625,19 +630,19 @@ function updateBossHUD(){
       mAura.style.background = `radial-gradient(circle at center, ${color}44 0%, transparent 70%)`;
       mView.style.boxShadow = `inset 0 0 40px ${color}22`;
       mArt.style.filter = `drop-shadow(0 0 15px ${color}aa)`;
-	      const cdCircle = document.getElementById('cdRingCircle');
-	      if(cdCircle){
-	        const ringPct = Math.max(0, bm.counterTimer / (bm.COUNTER_BASE + bm.counterDelayBonus));
-	        const circumference = 2 * Math.PI * 20;
-	        const offset = circumference * (1 - ringPct);
-	        cdCircle.style.stroke = color;
-	        cdCircle.style.strokeDashoffset = offset;
-	        const cdNum = document.getElementById('cdCountdown');
-	        if(cdNum) {
-	          cdNum.textContent = (bm.counterTimer/1000).toFixed(1);
-	          cdNum.style.color = color;
-	        }
-	      }
+		      const cdCircle = document.getElementById('cdRingCircle');
+		      if(cdCircle){
+		        const ringPct = Math.max(0, bm.counterTimer / (bm.COUNTER_BASE + bm.counterDelayBonus));
+		        const circumference = 2 * Math.PI * 22; // 半徑改為 22
+		        const offset = circumference * (1 - ringPct);
+		        cdCircle.style.stroke = color;
+		        cdCircle.style.strokeDashoffset = offset;
+		        const cdNum = document.getElementById('cdCountdown');
+		        if(cdNum) {
+		          cdNum.textContent = (bm.counterTimer/1000).toFixed(1);
+		          cdNum.style.color = color;
+		        }
+		      }
 	    }
   const bmN=document.getElementById('bmName');if(bmN)bmN.textContent=bm.bossData?bm.bossData.name:''; const bmAM=document.getElementById('bmArtMini'); if(bmAM) bmAM.textContent=bm.bossData?bm.bossData.art:'';
   const bmS=document.getElementById('bmStage');if(bmS)bmS.textContent=`${bm.stage}/42`;
