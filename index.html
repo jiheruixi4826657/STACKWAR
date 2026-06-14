@@ -62,6 +62,21 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.8);
             margin-bottom: 6px;
         }
+        #mobileAtkBox {
+            display: none;
+            width: 100%;
+            padding: 4px;
+            margin-top: 5px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(0,232,232,0.3);
+            border-radius: 4px;
+            text-align: center;
+        }
+        #mobileAtkBox .lbl { font-size: 0.35rem; color: #888; letter-spacing: 1px; }
+        #mobileAtkBox .val { font-size: 0.6rem; color: #00e8e8; font-weight: bold; }
+        @media (max-width: 500px) {
+            #mobileAtkBox { display: block !important; }
+        }
         #mobileBossCard .m-art { font-size: 2.2rem; line-height: 1; margin-bottom: 2px; text-shadow: 0 0 15px rgba(255,50,100,0.5); }
         #mobileBossCard .m-name { font-size: 0.45rem; color: #f66; font-weight: bold; letter-spacing: 1px; }
         #mobileBossCard .m-stage { font-size: 0.35rem; color: #888; margin-bottom: 2px; }
@@ -255,7 +270,11 @@
         累計傷害：<span id="finalDmg" style="color:#f66;font-weight:bold">0</span>
     </div>
     <button class="btn" onclick="location.reload()" style="border-color:#ffd700;color:#ffd700;padding:15px 40px;font-size:1.2rem">回到主選單</button>
-</div><!-- Battle mode top HUD --><div id="battleTopHUD" style="display:none;position:fixed;top:0;left:0;right:0;height:38px;background:var(--panel);border-bottom:1px solid var(--border-w);align-items:center;justify-content:space-around;z-index:62;font-size:.65rem;padding:0 6px"><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#4af;font-size:.5rem">YOU</span><span style="color:#4af;font-weight:bold" id="bpScore">0</span></div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#fa0;font-size:.5rem">LINES</span><span style="color:#fa0" id="bpLines">0</span></div><div style="color:#ff0;font-weight:bold;font-size:.9rem" id="bTimer">2:00</div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#f66;font-size:.5rem">AI LINES</span><span style="color:#f66" id="baLines">0</span></div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#c04f;font-size:.5rem">AI</span><span style="color:#c040ff;font-weight:bold" id="baScore">0</span></div></div><!-- Portrait top HUD --><div id="mHUD"><div class="hv"><span class="hl">SCORE</span><b id="ms">0</b></div><div class="hv"><span class="hl">LV</span><b id="ml">1</b></div><div class="hv"><span class="hl">LINES</span><b id="mn">0</b></div><div class="hv"><span class="hl" id="mModeL">COMBO</span><b id="mModeVal" style="color:var(--c0)">-</b></div><div class="hv" style="cursor:pointer; padding: 0 10px; background: rgba(255,255,255,0.05); border-radius: 4px;" onclick="openPause()"><span class="hl">MENU</span><b style="color:#f66;font-size:1.1rem">⚙</b></div></div><!-- Portrait right panel --><div id="portRight"><div class="rlbl">NEXT</div><canvas id="nextP" width="56" height="168"></canvas><!-- HOLD: tappable area --><div id="portHoldBtn"><div class="hlbl">HOLD</div><canvas id="holdP" width="50" height="50"></canvas></div></div><!-- Portrait bottom bar --><div id="portCtrl"><button class="cb" id="pbL">◀<br><small>左移</small></button><button class="cb" id="pbSoft">▼<br><small>軟降</small></button><button class="cb" id="pbR">▶<br><small>右移</small></button></div><!-- Portrait hard drop corner --><div id="pbHardCorner"><div class="hdi">⬇</div><div class="hdt">瞬降</div></div><!-- Game area --><div id="blackoutOverlay"></div><div id="monsterTextOverlay"></div><div id="gameWrap"><div id="topMaskOverlay"></div><div id="holySwordOverlay"><div class="holy-sword">🗡️</div><div class="sword-impact"></div></div><div id="deskL"><div id="deskLStats" style="display:flex;flex-direction:column;gap:5px;width:100%"><div class="box hud-frame"><div class="lbl">HOLD</div><canvas class="mini-cvs" id="holdD" width="74" height="74"></canvas></div><div class="box" id="modeHUD"><div class="mhLbl" id="mhLbl">TIME</div><div class="mhVal normal" id="mhVal">--</div></div><div id="b2bBadge">B2B ×1</div><div class="box"><div class="lbl">SCORE</div><div class="val" id="scoreEl">0</div></div><div class="box"><div class="lbl">LEVEL</div><div class="val" id="levelEl">1</div></div><div class="box"><div class="lbl">LINES</div><div class="val" id="linesEl">0</div></div><div class="box"><div class="lbl">COMBO</div><div class="val" id="comboEl">-</div></div><button id="musicBtn" onclick="toggleBGM()">🎵 音樂</button></div><div class="box hud-frame" id="btlHoldBox" style="display:none"><div class="lbl">HOLD</div><canvas class="mini-cvs" id="holdBtl" width="74" height="74"></canvas></div><div class="box hud-frame" id="btlNextBox" style="display:none"><div class="lbl">NEXT</div><canvas class="mini-cvs" id="nextBtl" width="74" height="370"></canvas></div></div><canvas id="mainCanvas"></canvas><div id="vsEl" style="display:none;color:#ff0;text-shadow:0 0 12px #ff0;font-size:1.1rem;font-weight:bold;align-self:center;flex-shrink:0;padding:0 4px;writing-mode:vertical-lr;letter-spacing:3px">VS</div><canvas id="aiCanvas" style="display:none;border:2px solid rgba(255,255,255,0.45);box-shadow:0 0 18px rgba(160,0,255,.22),0 0 4px rgba(255,255,255,.1);flex-shrink:0;align-self:flex-start"></canvas><div id="deskR"><div id="deskRNorm" style="display:flex;flex-direction:column;gap:5px;width:100%">
+</div><!-- Battle mode top HUD --><div id="battleTopHUD" style="display:none;position:fixed;top:0;left:0;right:0;height:38px;background:var(--panel);border-bottom:1px solid var(--border-w);align-items:center;justify-content:space-around;z-index:62;font-size:.65rem;padding:0 6px"><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#4af;font-size:.5rem">YOU</span><span style="color:#4af;font-weight:bold" id="bpScore">0</span></div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#fa0;font-size:.5rem">LINES</span><span style="color:#fa0" id="bpLines">0</span></div><div style="color:#ff0;font-weight:bold;font-size:.9rem" id="bTimer">2:00</div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#f66;font-size:.5rem">AI LINES</span><span style="color:#f66" id="baLines">0</span></div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#c04f;font-size:.5rem">AI</span><span style="color:#c040ff;font-weight:bold" id="baScore">0</span></div></div><!-- Portrait top HUD --><div id="mHUD"><div class="hv"><span class="hl">SCORE</span><b id="ms">0</b></div><div class="hv"><span class="hl">LV</span><b id="ml">1</b></div><div class="hv"><span class="hl">LINES</span><b id="mn">0</b></div><div class="hv"><span class="hl" id="mModeL">COMBO</span><b id="mModeVal" style="color:var(--c0)">-</b></div><div class="hv" style="cursor:pointer; padding: 0 10px; background: rgba(255,255,255,0.05); border-radius: 4px;" onclick="openPause()"><span class="hl">MENU</span><b style="color:#f66;font-size:1.1rem">⚙</b></div></div><!-- Portrait right panel --><div id="portRight"><div class="rlbl">NEXT</div><canvas id="nextP" width="56" height="168"></canvas><!-- HOLD: tappable area --><div id="portHoldBtn"><div class="hlbl">HOLD</div><canvas id="holdP" width="50" height="50"></canvas></div></div><!-- Portrait bottom bar --><div id="portCtrl"><button class="cb" id="pbL">◀<br><small>左移</small></button><button class="cb" id="pbSoft">▼<br><small>軟降</small></button><button class="cb" id="pbR">▶<br><small>右移</small></button></div><!-- Portrait hard drop corner --><div id="pbHardCorner"><div class="hdi">⬇</div><div class="hdt">瞬降</div></div><!-- Game area --><div id="blackoutOverlay"></div><div id="monsterTextOverlay"></div><div id="gameWrap"><div id="topMaskOverlay"></div><div id="holySwordOverlay"><div class="holy-sword">🗡️</div><div class="sword-impact"></div></div><div id="deskL"><div id="deskLStats" style="display:flex;flex-direction:column;gap:5px;width:100%"><div class="box hud-frame"><div class="lbl">HOLD</div><canvas class="mini-cvs" id="holdD" width="74" height="74"></canvas></div><div class="box" id="modeHUD"><div class="mhLbl" id="mhLbl">TIME</div><div class="mhVal normal" id="mhVal">--</div></div><div id="b2bBadge">B2B ×1</div><div class="box"><div class="lbl">SCORE</div><div class="val" id="scoreEl">0</div></div><div class="box"><div class="lbl">LEVEL</div><div class="val" id="levelEl">1</div></div><div class="box"><div class="lbl">LINES</div><div class="val" id="linesEl">0</div></div><div class="box"><div class="lbl">COMBO</div><div class="val" id="comboEl">-</div></div><button id="musicBtn" onclick="toggleBGM()">🎵 音樂</button>
+<div id="mobileAtkBox">
+    <div class="lbl">ATK</div>
+    <div id="mAtkVal" class="val">100%</div>
+</div></div><div class="box hud-frame" id="btlHoldBox" style="display:none"><div class="lbl">HOLD</div><canvas class="mini-cvs" id="holdBtl" width="74" height="74"></canvas></div><div class="box hud-frame" id="btlNextBox" style="display:none"><div class="lbl">NEXT</div><canvas class="mini-cvs" id="nextBtl" width="74" height="370"></canvas></div></div><canvas id="mainCanvas"></canvas><div id="vsEl" style="display:none;color:#ff0;text-shadow:0 0 12px #ff0;font-size:1.1rem;font-weight:bold;align-self:center;flex-shrink:0;padding:0 4px;writing-mode:vertical-lr;letter-spacing:3px">VS</div><canvas id="aiCanvas" style="display:none;border:2px solid rgba(255,255,255,0.45);box-shadow:0 0 18px rgba(160,0,255,.22),0 0 4px rgba(255,255,255,.1);flex-shrink:0;align-self:flex-start"></canvas><div id="deskR"><div id="deskRNorm" style="display:flex;flex-direction:column;gap:5px;width:100%">
     <!-- 手機版專屬 BOSS 卡片 (僅在手機模式顯示) -->
     <div id="mobileBossCard" style="display:none">
         <div class="m-art" id="mbArt">👹</div>
@@ -315,21 +334,20 @@
         </div>
     </div>
 
-    <!-- 反擊倒數區域 -->
-    <div class="boss-panel-box counter-row" style="position:relative; height: 80px; display:flex; align-items:center; justify-content: space-between; padding: 0 15px;">
-        <div style="display:flex; flex-direction:column;">
-            <div class="boss-panel-label" style="text-align:left; margin-bottom:4px; font-size: 0.7rem; color: #888; letter-spacing: 1px;">反擊倒數</div>
-            <div id="btTimer" style="font-size: 1.8rem; color: #00ffff; font-weight: bold; font-family: 'Courier New', monospace; text-shadow: 0 0 15px rgba(0,255,255,0.5);">2.2s</div>
-        </div>
-        <div class="cd-ring-desktop" style="position:relative; width: 60px; height: 60px;">
-            <svg width="60" height="60" viewBox="0 0 50 50">
+    <!-- 反擊倒數區域：重構成以環形為中心 -->
+    <div class="boss-panel-box counter-row" style="position:relative; height: 100px; display:flex; align-items:center; justify-content: center; padding: 10px;">
+        <div class="cd-ring-desktop" style="position:relative; width: 80px; height: 80px;">
+            <svg width="80" height="80" viewBox="0 0 50 50">
                 <circle cx="25" cy="25" r="22" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4" />
                 <circle id="cdRingCircle" cx="25" cy="25" r="22" fill="none" stroke="#00ffff" stroke-width="4" 
                         stroke-dasharray="138.2" stroke-dashoffset="0" stroke-linecap="round"
                         style="transition: stroke-dashoffset 0.1s linear, stroke 0.3s;"
                         transform="rotate(-90 25 25)" />
             </svg>
-            <div id="cdCountdown" style="position:absolute; inset:0; display:none; align-items:center; justify-content:center; font-size:0.8rem; color:#00ffff; font-weight:bold;">2.2</div>
+            <div id="cdCountdown" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <span style="font-size: 0.5rem; color: #888; margin-bottom: -2px;">CD</span>
+                <span id="btTimer" style="font-size: 1.6rem; color: #00ffff; font-weight: bold; font-family: 'Courier New', monospace; text-shadow: 0 0 15px rgba(0,255,255,0.5);">5.0</span>
+            </div>
         </div>
     </div>
     
@@ -574,20 +592,27 @@ function updateBossHUD(){
 	  const btHN=document.getElementById('btHPNum');if(btHN)btHN.textContent=hpTxt;
 	  const btN=document.getElementById('btName');if(btN)btN.textContent=(bm.bossData?bm.bossData.art+' '+bm.bossData.name:'');
 	  const btSt=document.getElementById('btStage');if(btSt)btSt.textContent=`${bm.stage}/42`;
-  const btT=document.getElementById('btTimer');if(btT)btT.textContent=(bm.counterTimer/1000).toFixed(1)+'s';
-  const cdCircle = document.getElementById('cdRingCircle');
-  if(cdCircle){
-    const ringPct = Math.max(0, bm.counterTimer / (bm.COUNTER_BASE + bm.counterDelayBonus));
-    const circumference = 2 * Math.PI * 22;
-    cdCircle.style.strokeDashoffset = circumference * (1 - ringPct);
-  }
-  const atkVal = document.getElementById('atkVal');
-	  if(atkVal) {
-	    atkVal.textContent = totalAtkPct + '%';
-	    atkVal.style.color = combo > 0 ? '#ff4040' : '#00e8e8';
-	    if(combo > 2) atkVal.style.textShadow = '0 0 15px #ff4040';
-	    else atkVal.style.textShadow = 'none';
+	  const btT=document.getElementById('btTimer');
+	  const cdCircle = document.getElementById('cdRingCircle');
+	  const ringPct = Math.max(0, bm.counterTimer / (bm.COUNTER_BASE + bm.counterDelayBonus));
+	  
+	  if(btT) btT.textContent = (bm.counterTimer/1000).toFixed(1); // 圓心顯示不帶 s
+	  if(cdCircle){
+	    const circumference = 2 * Math.PI * 22;
+	    cdCircle.style.strokeDashoffset = circumference * (1 - ringPct);
 	  }
+	  const atkVal = document.getElementById('atkVal');
+		  const mAtkVal = document.getElementById('mAtkVal');
+		  if(atkVal) {
+		    atkVal.textContent = totalAtkPct + '%';
+		    atkVal.style.color = combo > 0 ? '#ff4040' : '#00e8e8';
+		    if(combo > 2) atkVal.style.textShadow = '0 0 15px #ff4040';
+		    else atkVal.style.textShadow = 'none';
+		  }
+		  if(mAtkVal) {
+		    mAtkVal.textContent = totalAtkPct + '%';
+		    mAtkVal.style.color = combo > 0 ? '#ff4040' : '#00e8e8';
+		  }
 
     if(window.innerWidth <= 500){
       const mbCard = document.getElementById('mobileBossCard');
@@ -652,7 +677,8 @@ function updateBossHUD(){
   const bmS=document.getElementById('bmStage');if(bmS)bmS.textContent=`${bm.stage}/42`;
   const bmHF=document.getElementById('bmHPFill');if(bmHF)bmHF.style.width=pct+'%';
   const bmHN=document.getElementById('bmHPNum');if(bmHN)bmHN.textContent=hpTxt;
-  const bmT=document.getElementById('btTimer');if(bmT)bmT.textContent=(bm.counterTimer/1000).toFixed(1)+'s';
+	  // 移除重複的 btTimer 更新，已在上方統一處理
+
   const bmSk=document.getElementById('bmSkills');
   if(bmSk&&bm.bossData){
     if(bm.isBoss){
