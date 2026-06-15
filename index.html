@@ -264,7 +264,8 @@
   <!-- 標題區 -->
   <div style="text-align:center;margin-bottom:4px">
     <h1 style="font-size:clamp(1.8rem,8vw,3rem);letter-spacing:6px;margin-bottom:2px">疊戰 STACKWAR</h1>
-    <div style="font-size:.6rem;color:#3a3a6a;letter-spacing:4px">STACK STRATEGY GAME</div>
+    <div style="font-size:.6rem;color:#3a3a6a;letter-spacing:4px;margin-bottom:6px">STACK STRATEGY GAME</div>
+    <div id="homeOnlineBadge" style="display:inline-block;background:rgba(0,50,0,0.7);border:1px solid #3a3;border-radius:20px;padding:4px 16px;font-size:.7rem;color:#6f6;letter-spacing:2px">● 載入中...</div>
   </div>
 
   <!-- 一般模式 -->
@@ -445,8 +446,11 @@ function stopHeartbeat(){
 }
 async function updateOnlineCount(){
   const r = await gasGet('getOnlineCount');
+  const count = (r && r.count!==undefined) ? r.count : null;
   const el = document.getElementById('onlineBadge');
-  if(el && r && r.count!==undefined) el.textContent = `● ${r.count} 人正在挑戰`;
+  if(el && count!==null) el.textContent = `● ${count} 人正在挑戰`;
+  const el2 = document.getElementById('homeOnlineBadge');
+  if(el2 && count!==null) el2.textContent = `● ${count} 人正在挑戰`;
 }
 
 // ── 名稱 Modal ────────────────────────────────
@@ -3419,7 +3423,7 @@ function startBossMode(isLoad){ if(!isLoad && loadBossProgress()) return;
   bossStartStage(1);
   if(bgmEnabled)startBGM();
 }
-function goMenu(){document.getElementById('startScreen').classList.remove('hidden');document.getElementById('gearBtn').style.display='none';document.getElementById('dangerBar').style.display='none';document.getElementById('battleTopHUD').style.display='none';document.getElementById('bossTopBar').style.display='none';document.getElementById('aiCanvas').style.display='none';document.getElementById('vsEl').style.display='none';['cardOverlay','bossEnding'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});const srGo=document.getElementById('stageResult');if(srGo){srGo.classList.remove('active');srGo.classList.add('hidden');}if(bm.shakeIntervalId){clearInterval(bm.shakeIntervalId);bm.shakeIntervalId=null;}const gwGo=document.getElementById('gameWrap');if(gwGo)gwGo.style.transform='';bm.active=false;updateBestDisplay();resize();}
+function goMenu(){document.getElementById('startScreen').classList.remove('hidden');document.getElementById('gearBtn').style.display='none';document.getElementById('dangerBar').style.display='none';document.getElementById('battleTopHUD').style.display='none';document.getElementById('bossTopBar').style.display='none';document.getElementById('aiCanvas').style.display='none';document.getElementById('vsEl').style.display='none';['cardOverlay','bossEnding'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});const srGo=document.getElementById('stageResult');if(srGo){srGo.classList.remove('active');srGo.classList.add('hidden');}if(bm.shakeIntervalId){clearInterval(bm.shakeIntervalId);bm.shakeIntervalId=null;}const gwGo=document.getElementById('gameWrap');if(gwGo)gwGo.style.transform='';bm.active=false;updateBestDisplay();resize();updateOnlineCount();}
 
 function startGame(){
   if(!curMode) curMode = 'free';
