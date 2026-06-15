@@ -590,82 +590,82 @@ async function confirmBossStart(){
 async function showLeaderboard(){
   const ov = document.getElementById('leaderboardOverlay');
   ov.style.display = 'flex';
-  const content = document.getElementById('lbContent');
-  content.innerHTML = '<div style="text-align:center;color:#555;padding:40px;font-size:.9rem">載入中...</div>';
+  const ct = document.getElementById('lbContent');
+  ct.innerHTML = '<div style="text-align:center;color:#555;padding:40px;font-size:.9rem">載入中...</div>';
   const r = await gasGet('getLeaderboard');
-  if(!r || r.error || !r.data){ content.innerHTML = '<div style="text-align:center;color:#f44;padding:40px">載入失敗，請稍後再試</div>'; return; }
-  if(!r.data.length){ content.innerHTML = '<div style="text-align:center;color:#555;padding:40px">尚無紀錄，成為第一名吧！</div>'; return; }
+  if(!r || r.error || !r.data){ ct.innerHTML = '<div style="text-align:center;color:#f44;padding:40px">載入失敗，請稍後再試</div>'; return; }
+  if(!r.data.length){ ct.innerHTML = '<div style="text-align:center;color:#555;padding:40px">尚無紀錄，成為第一名吧！</div>'; return; }
 
-  // 排序：通關數↓ → 時間↑ → 消除行數↑（Speed Run）
+  // 排序：關卡數↓ → 時間↑ → Score↓
   const sorted = [...r.data].sort((a,b)=>{
-    if((b.stage||0)!==(a.stage||0)) return (b.stage||0)-(a.stage||0);
-    if((a.time||0)!==(b.time||0)) return (a.time||0)-(b.time||0);
-    return (a.lines||0)-(b.lines||0);
+    if((b.stage||0) !== (a.stage||0)) return (b.stage||0) - (a.stage||0);
+    if((a.time||0)  !== (b.time||0))  return (a.time||0)  - (b.time||0);
+    return (b.score||0) - (a.score||0);
   });
-
-  // 欄位標題
-  const header = `<div style="display:grid;grid-template-columns:36px 1fr 52px 64px 52px;gap:6px;padding:6px 14px 10px;border-bottom:1px solid rgba(255,255,255,0.1);color:#666;font-size:.7rem;letter-spacing:1px;">
-    <span></span><span>名稱</span>
-    <span style="text-align:center">⚔關卡</span>
-    <span style="text-align:center">⏱時間</span>
-    <span style="text-align:center">📋行數</span>
-  </div>`;
 
   const medalColors = ['#FFD700','#C0C0C0','#CD7F32'];
   const medalBg     = ['rgba(255,215,0,0.10)','rgba(192,192,192,0.08)','rgba(205,127,50,0.08)'];
   const medalBorder = ['rgba(255,215,0,0.40)','rgba(192,192,192,0.30)','rgba(205,127,50,0.30)'];
   const medalIcon   = ['🥇','🥈','🥉'];
 
+  // 欄位標題
+  const header = `<div style="display:grid;grid-template-columns:34px 1fr 50px 66px 68px;gap:4px;padding:6px 12px 8px;border-bottom:1px solid rgba(255,255,255,0.1);color:#555;font-size:.65rem;letter-spacing:1px">
+    <span></span><span>名稱</span>
+    <span style="text-align:center">⚔ 關卡</span>
+    <span style="text-align:center">⏱ 時間</span>
+    <span style="text-align:center">💯 Score</span>
+  </div>`;
+
   const rows = sorted.map((row,i)=>{
-    const rank = i+1;
-    const isMe = row.name === playerName;
+    const isMe    = row.name === playerName;
     const isMedal = i < 3;
     const rankCell = isMedal
       ? `<span style="font-size:1.1rem">${medalIcon[i]}</span>`
-      : `<span style="color:#555;font-size:.8rem;text-align:center;display:block">${rank}</span>`;
+      : `<span style="color:#555;font-size:.78rem;display:block;text-align:center">${i+1}</span>`;
+
     const bg     = isMe ? 'rgba(255,215,0,0.08)' : (isMedal ? medalBg[i]     : 'rgba(255,255,255,0.02)');
     const border = isMe ? 'rgba(255,215,0,0.35)'  : (isMedal ? medalBorder[i] : 'rgba(255,255,255,0.06)');
     const nameColor = isMe ? '#ffd700' : (isMedal ? medalColors[i] : '#ddd');
 
-    const mm = Math.floor((row.time||0)/60000);
-    const ss = Math.floor(((row.time||0)%60000)/1000);
-    const ms = Math.floor(((row.time||0)%1000)/10);
-    const timeStr = `${mm}:${String(ss).padStart(2,'0')}<span style="color:#555;font-size:.65rem">.${String(ms).padStart(2,'0')}</span>`;
+    const mm  = Math.floor((row.time||0)/60000);
+    const ss  = String(Math.floor(((row.time||0)%60000)/1000)).padStart(2,'0');
+    const ms  = String(Math.floor(((row.time||0)%1000)/10)).padStart(2,'0');
+    const timeStr = `${mm}:${ss}<span style="color:#555;font-size:.6rem">.${ms}</span>`;
 
-    return `<div style="display:grid;grid-template-columns:36px 1fr 52px 64px 52px;gap:6px;align-items:center;padding:10px 14px;background:${bg};border:1px solid ${border};border-radius:8px;">
+    const scoreStr = (row.score||0).toLocaleString();
+    const linesStr = (row.lines||0).toLocaleString();
+
+    return `<div style="display:grid;grid-template-columns:34px 1fr 50px 66px 68px;gap:4px;align-items:center;padding:9px 12px;background:${bg};border:1px solid ${border};border-radius:8px">
       <div style="text-align:center">${rankCell}</div>
-      <div style="font-weight:bold;color:${nameColor};font-size:.88rem;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.name}${isMe?' ◀':''}</div>
-      <div style="text-align:center;color:#f77;font-size:.82rem;font-weight:bold">${row.stage||0}</div>
+      <div>
+        <div style="font-weight:bold;color:${nameColor};font-size:.85rem;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.name}${isMe?' ◀':''}</div>
+        <div style="font-size:.6rem;color:#444;margin-top:2px">📋 ${linesStr} 行</div>
+      </div>
+      <div style="text-align:center;color:#f77;font-size:.85rem;font-weight:bold">${row.stage||0}</div>
       <div style="text-align:center;color:#0cf;font-size:.82rem;font-weight:bold">${timeStr}</div>
-      <div style="text-align:center;color:#aaa;font-size:.82rem">${(row.lines||0).toLocaleString()}</div>
+      <div style="text-align:center;color:#fa0;font-size:.78rem;font-weight:bold">${scoreStr}</div>
     </div>`;
   }).join('');
 
-  // ── 全體統計 ──
+  // 全體統計
   const totStage = sorted.reduce((s,r)=>s+(r.stage||0), 0);
   const totTimeMs = sorted.reduce((s,r)=>s+(r.time||0), 0);
+  const totScore  = sorted.reduce((s,r)=>s+(r.score||0), 0);
   const totLines  = sorted.reduce((s,r)=>s+(r.lines||0), 0);
   const tm = Math.floor(totTimeMs/60000);
-  const ts = Math.floor((totTimeMs%60000)/1000);
-  const footer = `<div style="margin-top:14px;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);border-radius:10px;">
-    <div style="color:#555;font-size:.68rem;letter-spacing:2px;margin-bottom:10px;text-align:center">── 全體玩家紀錄 ──</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
-      <div>
-        <div style="font-size:1.3rem;font-weight:bold;color:#f77">${totStage.toLocaleString()}</div>
-        <div style="font-size:.65rem;color:#555;letter-spacing:1px;margin-top:2px">總通關數</div>
-      </div>
-      <div>
-        <div style="font-size:1.3rem;font-weight:bold;color:#0cf">${tm}:${String(ts).padStart(2,'0')}</div>
-        <div style="font-size:.65rem;color:#555;letter-spacing:1px;margin-top:2px">總遊玩時間</div>
-      </div>
-      <div>
-        <div style="font-size:1.3rem;font-weight:bold;color:#aaa">${totLines.toLocaleString()}</div>
-        <div style="font-size:.65rem;color:#555;letter-spacing:1px;margin-top:2px">總消除行數</div>
-      </div>
+  const ts = String(Math.floor((totTimeMs%60000)/1000)).padStart(2,'0');
+
+  const footer = `<div style="margin-top:14px;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);border-radius:10px">
+    <div style="color:#555;font-size:.65rem;letter-spacing:2px;margin-bottom:10px;text-align:center">── 全體玩家紀錄 ──</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center">
+      <div><div style="font-size:1.2rem;font-weight:bold;color:#f77">${totStage.toLocaleString()}</div><div style="font-size:.62rem;color:#555;margin-top:2px">總通關數</div></div>
+      <div><div style="font-size:1.2rem;font-weight:bold;color:#0cf">${tm}:${ts}</div><div style="font-size:.62rem;color:#555;margin-top:2px">總遊玩時間</div></div>
+      <div><div style="font-size:1.2rem;font-weight:bold;color:#fa0">${totScore.toLocaleString()}</div><div style="font-size:.62rem;color:#555;margin-top:2px">總 Score</div></div>
+      <div><div style="font-size:1.2rem;font-weight:bold;color:#aaa">${totLines.toLocaleString()}</div><div style="font-size:.62rem;color:#555;margin-top:2px">總消除行數</div></div>
     </div>
   </div>`;
 
-  content.innerHTML = header + rows + footer;
+  ct.innerHTML = header + rows + footer;
 }
 
 function hideLeaderboard(){
