@@ -400,7 +400,6 @@ function showBossNameModal(){
 
   _nameConfirmPending = '';
 
-  const recoverRow = document.getElementById('recoverRow');
   if(saved){
     // ── 已登記玩家：鎖定名稱，不可更改 ──
     playerName = saved;
@@ -417,9 +416,7 @@ function showBossNameModal(){
       btn0.textContent = '▶ 繼續冒險';
       btn0.disabled = false;
     }
-    if(recoverRow) recoverRow.style.display = 'none';
   } else {
-    if(recoverRow) recoverRow.style.display = 'block';
     // ── 新玩家：可輸入名稱 ──
     inp.value    = '';
     inp.readOnly = false;
@@ -439,55 +436,13 @@ function hideBossNameModal(){
   document.getElementById('bossNameModal').style.display = 'none';
 }
 // ── 實際啟動 BOSS（共用路徑）──
-function resetPlayerName(){
-  if(!confirm('確定要更換名稱？\n原名稱將從本機清除，排行榜紀錄由管理員手動處理。\n\n若想取回原名稱，可在下一個畫面點「取回舊名稱」。')) return;
+async function resetPlayerName(){
+  if(!confirm('確定要更換名稱？\n原名稱將從 GAS 名冊刪除，可重新自由註冊。')) return;
+  const oldName = localStorage.getItem('tetris_player_name');
   localStorage.removeItem('tetris_player_name');
   playerName = '';
+  if(oldName) gasGet('deleteName&name='+encodeURIComponent(oldName));
   showBossNameModal();
-}
-
-async function recoverPlayerName(){
-  const inp  = document.getElementById('playerNameInput');
-  const hint = document.getElementById('nameHint');
-  const btn  = document.getElementById('bossStartConfirmBtn');
-  const name = inp.value.trim();
-  if(!name){
-    inp.style.borderColor = '#f44';
-    inp.placeholder = '請先輸入要取回的名稱！';
-    if(hint){ hint.textContent = '↑ 請輸入你原本使用的名稱'; hint.style.color = '#f84'; }
-    return;
-  }
-  btn.disabled = true;
-  if(hint){ hint.textContent = '⏳ 查詢中...'; hint.style.color = '#aaa'; }
-
-  let r;
-  try{
-    const ctrl = new AbortController();
-    const tid  = setTimeout(()=>ctrl.abort(), 5000);
-    const res  = await fetch(GAS_URL+'?action=checkName&name='+encodeURIComponent(name), {signal:ctrl.signal});
-    clearTimeout(tid);
-    r = await res.json();
-  }catch(e){ r = null; }
-
-  btn.disabled = false;
-
-  if(!r){
-    if(hint){ hint.innerHTML = '⚠️ 網路逾時，無法驗證<br><span style="color:#888">請稍後再試</span>'; hint.style.color = '#fa0'; }
-    return;
-  }
-  if(r.taken){
-    // 名稱存在於 GAS → 還原
-    localStorage.setItem('tetris_player_name', name);
-    playerName = name;
-    if(hint){ hint.innerHTML = '✅ 名稱取回成功！即將進入遊戲...'; hint.style.color = '#5d5'; }
-    inp.value    = name;
-    inp.readOnly = true;
-    inp.style.borderColor = '#555';
-    setTimeout(()=>_doStartBoss(name), 800);
-  } else {
-    if(hint){ hint.innerHTML = '❌ 查無此名稱，請確認拼字是否正確'; hint.style.color = '#f55'; }
-    inp.style.borderColor = '#f44';
-  }
 }
 function _doStartBoss(name){
   playerName = name;
@@ -3542,8 +3497,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     <input id="playerNameInput" type="text" maxlength="16" placeholder="輸入你的名稱" style="width:100%;padding:14px 16px;background:#111;border:2px solid #333;border-radius:10px;color:#fff;font-size:1rem;font-family:inherit;letter-spacing:2px;text-align:center;outline:none;box-sizing:border-box;transition:border-color .2s" onkeydown="if(event.key==='Enter')confirmBossStart()">
     <div id="nameHint" style="font-size:0.72rem;min-height:16px;letter-spacing:1px;text-align:center"></div>
     <button id="bossStartConfirmBtn" onclick="confirmBossStart()" style="width:100%;padding:16px;background:linear-gradient(135deg,#1a7a1a,#2da82d);border:none;border-radius:10px;color:#fff;font-size:1.1rem;font-family:inherit;font-weight:bold;letter-spacing:3px;cursor:pointer;box-shadow:0 4px 20px rgba(0,180,0,0.3)">▶ 開始挑戰</button>
-    <div id="recoverRow" style="font-size:0.68rem;color:#555;text-align:center;margin-top:-4px">曾有帳號？&nbsp;<span onclick="recoverPlayerName()" style="color:#88aaff;cursor:pointer;text-decoration:underline">取回舊名稱</span></div>
-    <button onclick="hideBossNameModal();showLeaderboard();" style="width:100%;padding:13px;background:#111;border:1px solid #2a2a2a;border-radius:10px;color:#ffd700;font-size:0.95rem;font-family:inherit;letter-spacing:2px;cursor:pointer">🏆 排行榜</button>
+<button onclick="hideBossNameModal();showLeaderboard();" style="width:100%;padding:13px;background:#111;border:1px solid #2a2a2a;border-radius:10px;color:#ffd700;font-size:0.95rem;font-family:inherit;letter-spacing:2px;cursor:pointer">🏆 排行榜</button>
     <button onclick="hideBossNameModal();showMessageBoard();" style="width:100%;padding:13px;background:#111;border:1px solid #2a2a2a;border-radius:10px;color:#aaa;font-size:0.95rem;font-family:inherit;letter-spacing:2px;cursor:pointer">💬 留言板</button>
     <button onclick="hideBossNameModal();goMenu();" style="background:none;border:none;color:#444;font-size:0.72rem;cursor:pointer;font-family:inherit;letter-spacing:1px;margin-top:2px">✕ 返回主選單</button>
   </div>
