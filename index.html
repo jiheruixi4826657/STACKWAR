@@ -2083,7 +2083,7 @@ function bossGameOver(){
   localStorage.removeItem('tetris_boss_save');
   // 提交分數（以當前關卡計）
   { const _elapsed = _bossStartTime ? Date.now()-_bossStartTime : modeTimer*1000;
-    submitBossScore(bm.currentStage, _elapsed, score, lines); }
+    submitBossScore(bm.stage, _elapsed, score, lines); }
   stopHeartbeat();
   running=false;cancelAnimationFrame(raf);stopBGM();sndGameOver();vib([100,40,200]);
   bm.active=false;
@@ -2176,7 +2176,7 @@ function triggerCrossReviveEffect(){
 	            localStorage.removeItem('tetris_boss_save');
 	            // 提交排行榜分數
 	            const _elapsed = _bossStartTime ? Date.now()-_bossStartTime : modeTimer*1000;
-	            submitBossScore(bm.currentStage, _elapsed, score, lines);
+	            submitBossScore(bm.stage, _elapsed, score, lines);
 	            stopHeartbeat();
 	        }
 	    }
