@@ -393,54 +393,112 @@ async function updateOnlineCount(){
 function showBossNameModal(){
   const modal = document.getElementById('bossNameModal');
   modal.style.display = 'flex';
-  const inp = document.getElementById('playerNameInput');
-  inp.value = playerName;
-  inp.style.borderColor = '#333';
+  const inp  = document.getElementById('playerNameInput');
+  const btn0 = document.getElementById('bossStartConfirmBtn');
   const hint = document.getElementById('nameHint');
-  if(hint) hint.textContent = playerName ? '（已登記名稱：' + playerName + '）' : ';
-  inp.focus();
-  inp.addEventListener('focus', ()=>{ inp.style.borderColor='#5a5'; }, {once:false});
-  inp.addEventListener('blur',  ()=>{ inp.style.borderColor='#333'; }, {once:false});
+  const saved = localStorage.getItem('tetris_player_name');
+
+  _nameConfirmPending = '';
+
+  if(saved){
+    // ── 已登記玩家：鎖定名稱，不可更改 ──
+    playerName = saved;
+    inp.value    = saved;
+    inp.readOnly = true;
+    inp.style.borderColor = '#555';
+    inp.style.color = '#aaa';
+    if(hint){
+      hint.textContent = '✅ 已登記名稱，無法更改';
+      hint.style.color = '#5a5';
+    }
+    if(btn0){
+      btn0.style.background = 'linear-gradient(135deg,#1a4a7a,#2d7aa8)';
+      btn0.textContent = '▶ 繼續冒險';
+      btn0.disabled = false;
+    }
+  } else {
+    // ── 新玩家：可輸入名稱 ──
+    inp.value    = '';
+    inp.readOnly = false;
+    inp.style.borderColor = '#333';
+    inp.style.color = '#fff';
+    if(hint){ hint.textContent = ''; }
+    if(btn0){
+      btn0.style.background = 'linear-gradient(135deg,#1a7a1a,#2da82d)';
+      btn0.textContent = '▶ 開始挑戰';
+      btn0.disabled = false;
+    }
+    inp.focus();
+  }
   updateOnlineCount();
 }
 function hideBossNameModal(){
   document.getElementById('bossNameModal').style.display = 'none';
 }
-async function confirmBossStart(){
-  const inp = document.getElementById('playerNameInput');
-  const btn = document.getElementById('bossStartConfirmBtn');
-  const name = inp.value.trim();
-  if(!name){ inp.style.borderColor='#f44'; inp.placeholder='請輸入名稱！'; return; }
-  // 如果本機 localStorage 已登記同名 → 同一玩家，直接使用
-  const savedName = localStorage.getItem('tetris_player_name');
-  if(savedName && savedName === name){
-    playerName = name;
-    hideBossNameModal();
-    startHeartbeat();
-    _bossStartTime = Date.now();
-    startBossMode();
-    return;
-  }
-  // 否則向 GAS 查詢名稱是否已被他人使用
-  btn.disabled=true; btn.textContent='驗證中...';
-  const r = await gasGet('checkName&name='+encodeURIComponent(name));
-  btn.disabled=false; btn.textContent='▶ 開始挑戰';
-  if(r && r.taken){
-    inp.style.borderColor='#f44';
-    const hint = document.getElementById('nameHint');
-    if(hint){ hint.textContent='❌ 此名稱已被其他玩家使用，請換一個'; hint.style.color='#f55'; }
-    return;
-  }
-  // 名稱可用 → 登記並開始
+// ── 實際啟動 BOSS（共用路徑）──
+function _doStartBoss(name){
   playerName = name;
   localStorage.setItem('tetris_player_name', name);
-  gasPost({action:'registerName', name});
-  const hint2 = document.getElementById('nameHint');
-  if(hint2){ hint2.textContent='✅ 名稱已登記'; hint2.style.color='#5f5'; }
+  const hint = document.getElementById('nameHint');
+  if(hint) hint.textContent = '';
   hideBossNameModal();
   startHeartbeat();
   _bossStartTime = Date.now();
   startBossMode();
+}
+
+// ── 名稱確認狀態（0=初始, 1=等待二次確認）──
+let _nameConfirmPending = '';
+
+function confirmBossStart(){
+  const inp   = document.getElementById('playerNameInput');
+  const btn   = document.getElementById('bossStartConfirmBtn');
+  const hint  = document.getElementById('nameHint');
+  const saved = localStorage.getItem('tetris_player_name');
+
+  // ── 已登記玩家：直接進入 ──
+  if(saved){
+    _doStartBoss(saved);
+    return;
+  }
+
+  // ── 新玩家：取得輸入名稱 ──
+  const name = inp.value.trim();
+  if(!name){
+    inp.style.borderColor = '#f44';
+    inp.placeholder = '請輸入名稱！';
+    _nameConfirmPending = '';
+    return;
+  }
+
+  // ── 第一次點擊 → 顯示確認警告 ──
+  if(_nameConfirmPending !== name){
+    _nameConfirmPending = name;
+    inp.readOnly = true;
+    inp.style.borderColor = '#fa0';
+    if(hint){
+      hint.innerHTML = '⚠️ 名稱一旦確定<b style="color:#f84"> 無法更改</b><br>再次點擊即確認';
+      hint.style.color = '#fa0';
+    }
+    btn.style.background = 'linear-gradient(135deg,#7a4a00,#d4860a)';
+    btn.textContent = '✅ 確認使用此名稱';
+    return;
+  }
+
+  // ── 第二次點擊 → 直接存入並開始，查重背景處理 ──
+  _nameConfirmPending = '';
+  // 背景查重（不阻塞遊戲）
+  gasGet('checkName&name='+encodeURIComponent(name)).then(r=>{
+    if(r && r.taken){
+      // 名稱被搶用：清掉 localStorage 讓下次重新確認
+      localStorage.removeItem('tetris_player_name');
+      playerName = '';
+    } else {
+      // 名稱可用：向 GAS 登記
+      gasPost({action:'registerName', name});
+    }
+  });
+  _doStartBoss(name);
 }
 
 // ── 排行榜 ────────────────────────────────────
@@ -556,7 +614,7 @@ async function loadMessages(){
     </div>`;
   }).join('');
 }
-async async function sendMessage(){
+async function sendMessage(){
   const inp = document.getElementById('msgInput');
   const msg = inp.value.trim();
   if(!msg) return;
@@ -3392,22 +3450,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   loadPlayerData();loadGAWeights();
   loadBCModelFromStorage().then(ok=>{if(ok){const bb=document.getElementById('bcBattleBtn');if(bb)bb.disabled=false;}});
 
-  // ── 名稱 Modal 按鈕 ──
-  document.getElementById('bossStartConfirmBtn').addEventListener('click', confirmBossStart);
-  document.getElementById('bossNameCancelBtn').addEventListener('click', ()=>{ hideBossNameModal(); goMenu(); });
-  document.getElementById('bossLeaderboardInBtn').addEventListener('click', ()=>{ hideBossNameModal(); showLeaderboard(); });
-  document.getElementById('bossMessageInBtn').addEventListener('click', ()=>{ hideBossNameModal(); showMessageBoard(); });
-  document.getElementById('playerNameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmBossStart(); });
-
-  // ── 排行榜 ──
-  document.getElementById('lbCloseBtn').addEventListener('click', hideLeaderboard);
-  document.getElementById('leaderboardOverlay').addEventListener('click', e=>{ if(e.target===e.currentTarget) hideLeaderboard(); });
-
-  // ── 留言板 ──
-  document.getElementById('mbCloseBtn').addEventListener('click', hideMessageBoard);
-  document.getElementById('messageBoardOverlay').addEventListener('click', e=>{ if(e.target===e.currentTarget) hideMessageBoard(); });
-  document.getElementById('msgSendBtn').addEventListener('click', sendMessage);
-  document.getElementById('msgInput').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
+  // Modal 按鈕已使用 HTML onclick，不需重複 addEventListener
 });
 </script>
     <div id="bossEnding" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95); z-index:10000; flex-direction:column; align-items:center; justify-content:center; color:#fff; text-align:center; font-family:'Courier New',monospace;">
