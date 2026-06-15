@@ -352,6 +352,197 @@
     <div id="bmDebuff" style="display:none"></div>
 </div>
 </div><div id="bmSkills" style="flex:1; font-size:1rem; color:#ff99aa; text-align:left; line-height:1.4; font-weight:bold; text-shadow:0 0 10px rgba(255,153,170,0.5)"></div></div><div id="bmDebuff" style="font-size:1.4rem;color:#f88;text-align:center;min-height:1.2em;line-height:1.4;margin-top:10px"></div></div><div id="landPanel"><div class="box hud-frame"><div class="lbl">HOLD</div><canvas class="mini-cvs" id="holdL" width="84" height="56"></canvas></div><div class="box" style="display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:3px"><div><div class="lbl">LV</div><div class="val" id="lvLand">1</div></div><div><div class="lbl">LINES</div><div class="val" id="lnLand">0</div></div><div style="grid-column:span 2"><div class="lbl">SCORE</div><div class="val" id="scLand" style="font-size:.75rem">0</div></div></div><div class="box hud-frame"><div class="lbl">NEXT</div><canvas class="mini-cvs" id="nextL" width="84" height="140"></canvas></div><div id="landCtrl"><button class="lcb lcbHold" id="lbHold">HOLD</button><button class="lcb" id="lbL">◀</button><button class="lcb" id="lbR">▶</button><button class="lcb" id="lbSoft">▼</button><button class="lcb lcbHard" id="lbHard">⬇</button><button id="lbPause" onclick="openPause()">⏸ PAUSE</button></div></div></div><script>
+// ══════════════════════════════════════════════
+// GAS 後端 + 排行榜 + 留言板 + 玩家名稱系統
+// ══════════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyBxcE8EjsVJeqvJO0LaFlC_c3OTKqrJJm7nz9M5IGu9Vu8iIp7EW4ycx6sXvDOj8c/exec';
+let playerName = localStorage.getItem('tetris_player_name') || '';
+let _heartbeatId = null;
+let _bossStartTime = 0;
+
+async function gasGet(action){
+  try{ const r=await fetch(GAS_URL+'?action='+action); return await r.json(); }catch(e){ return {error:e.message}; }
+}
+async function gasPost(data){
+  try{
+    // GAS doPost 無 CORS header，改用 no-cors fire-and-forget
+    await fetch(GAS_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(data),headers:{'Content-Type':'text/plain'}});
+    return {ok:true};
+  }catch(e){ return {error:e.message}; }
+}
+async function submitBossScore(stage, timeMs, sc, lns){
+  if(!playerName) return;
+  await gasPost({action:'submitScore', name:playerName, stage, time:timeMs, score:sc, lines:lns||0});
+}
+function startHeartbeat(){
+  if(!playerName) return;
+  gasPost({action:'heartbeat', name:playerName});
+  if(_heartbeatId) clearInterval(_heartbeatId);
+  _heartbeatId = setInterval(()=>{ if(playerName) gasPost({action:'heartbeat', name:playerName}); }, 30000);
+}
+function stopHeartbeat(){
+  if(_heartbeatId){ clearInterval(_heartbeatId); _heartbeatId=null; }
+}
+async function updateOnlineCount(){
+  const r = await gasGet('getOnlineCount');
+  const el = document.getElementById('onlineBadge');
+  if(el && r && r.count!==undefined) el.textContent = `● ${r.count} 人正在挑戰`;
+}
+
+// ── 名稱 Modal ────────────────────────────────
+function showBossNameModal(){
+  const modal = document.getElementById('bossNameModal');
+  modal.style.display = 'flex';
+  const inp = document.getElementById('playerNameInput');
+  inp.value = playerName;
+  inp.focus();
+  inp.addEventListener('focus', ()=>{ inp.style.borderColor='#5a5'; }, {once:false});
+  inp.addEventListener('blur',  ()=>{ inp.style.borderColor='#333'; }, {once:false});
+  updateOnlineCount();
+}
+function hideBossNameModal(){
+  document.getElementById('bossNameModal').style.display = 'none';
+}
+function confirmBossStart(){
+  const inp = document.getElementById('playerNameInput');
+  const name = inp.value.trim();
+  if(!name){ inp.style.borderColor='#f44'; inp.placeholder='請輸入名稱！'; return; }
+  playerName = name;
+  localStorage.setItem('tetris_player_name', name);
+  hideBossNameModal();
+  startHeartbeat();
+  _bossStartTime = Date.now();
+  startBossMode();
+}
+
+// ── 排行榜 ────────────────────────────────────
+async function showLeaderboard(){
+  const ov = document.getElementById('leaderboardOverlay');
+  ov.style.display = 'flex';
+  const content = document.getElementById('lbContent');
+  content.innerHTML = '<div style="text-align:center;color:#555;padding:40px;font-size:.9rem">載入中...</div>';
+  const r = await gasGet('getLeaderboard');
+  if(!r || r.error || !r.data){ content.innerHTML = '<div style="text-align:center;color:#f44;padding:40px">載入失敗，請稍後再試</div>'; return; }
+  if(!r.data.length){ content.innerHTML = '<div style="text-align:center;color:#555;padding:40px">尚無紀錄，成為第一名吧！</div>'; return; }
+
+  // 排序：通關數↓ → 時間↑ → 消除行數↑（Speed Run）
+  const sorted = [...r.data].sort((a,b)=>{
+    if((b.stage||0)!==(a.stage||0)) return (b.stage||0)-(a.stage||0);
+    if((a.time||0)!==(b.time||0)) return (a.time||0)-(b.time||0);
+    return (a.lines||0)-(b.lines||0);
+  });
+
+  // 欄位標題
+  const header = `<div style="display:grid;grid-template-columns:36px 1fr 52px 64px 52px;gap:6px;padding:6px 14px 10px;border-bottom:1px solid rgba(255,255,255,0.1);color:#666;font-size:.7rem;letter-spacing:1px;">
+    <span></span><span>名稱</span>
+    <span style="text-align:center">⚔關卡</span>
+    <span style="text-align:center">⏱時間</span>
+    <span style="text-align:center">📋行數</span>
+  </div>`;
+
+  const medalColors = ['#FFD700','#C0C0C0','#CD7F32'];
+  const medalBg     = ['rgba(255,215,0,0.10)','rgba(192,192,192,0.08)','rgba(205,127,50,0.08)'];
+  const medalBorder = ['rgba(255,215,0,0.40)','rgba(192,192,192,0.30)','rgba(205,127,50,0.30)'];
+  const medalIcon   = ['🥇','🥈','🥉'];
+
+  const rows = sorted.map((row,i)=>{
+    const rank = i+1;
+    const isMe = row.name === playerName;
+    const isMedal = i < 3;
+    const rankCell = isMedal
+      ? `<span style="font-size:1.1rem">${medalIcon[i]}</span>`
+      : `<span style="color:#555;font-size:.8rem;text-align:center;display:block">${rank}</span>`;
+    const bg     = isMe ? 'rgba(255,215,0,0.08)' : (isMedal ? medalBg[i]     : 'rgba(255,255,255,0.02)');
+    const border = isMe ? 'rgba(255,215,0,0.35)'  : (isMedal ? medalBorder[i] : 'rgba(255,255,255,0.06)');
+    const nameColor = isMe ? '#ffd700' : (isMedal ? medalColors[i] : '#ddd');
+
+    const mm = Math.floor((row.time||0)/60000);
+    const ss = Math.floor(((row.time||0)%60000)/1000);
+    const ms = Math.floor(((row.time||0)%1000)/10);
+    const timeStr = `${mm}:${String(ss).padStart(2,'0')}<span style="color:#555;font-size:.65rem">.${String(ms).padStart(2,'0')}</span>`;
+
+    return `<div style="display:grid;grid-template-columns:36px 1fr 52px 64px 52px;gap:6px;align-items:center;padding:10px 14px;background:${bg};border:1px solid ${border};border-radius:8px;">
+      <div style="text-align:center">${rankCell}</div>
+      <div style="font-weight:bold;color:${nameColor};font-size:.88rem;letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.name}${isMe?' ◀':''}</div>
+      <div style="text-align:center;color:#f77;font-size:.82rem;font-weight:bold">${row.stage||0}</div>
+      <div style="text-align:center;color:#0cf;font-size:.82rem;font-weight:bold">${timeStr}</div>
+      <div style="text-align:center;color:#aaa;font-size:.82rem">${(row.lines||0).toLocaleString()}</div>
+    </div>`;
+  }).join('');
+
+  // ── 全體統計 ──
+  const totStage = sorted.reduce((s,r)=>s+(r.stage||0), 0);
+  const totTimeMs = sorted.reduce((s,r)=>s+(r.time||0), 0);
+  const totLines  = sorted.reduce((s,r)=>s+(r.lines||0), 0);
+  const tm = Math.floor(totTimeMs/60000);
+  const ts = Math.floor((totTimeMs%60000)/1000);
+  const footer = `<div style="margin-top:14px;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);border-radius:10px;">
+    <div style="color:#555;font-size:.68rem;letter-spacing:2px;margin-bottom:10px;text-align:center">── 全體玩家紀錄 ──</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+      <div>
+        <div style="font-size:1.3rem;font-weight:bold;color:#f77">${totStage.toLocaleString()}</div>
+        <div style="font-size:.65rem;color:#555;letter-spacing:1px;margin-top:2px">總通關數</div>
+      </div>
+      <div>
+        <div style="font-size:1.3rem;font-weight:bold;color:#0cf">${tm}:${String(ts).padStart(2,'0')}</div>
+        <div style="font-size:.65rem;color:#555;letter-spacing:1px;margin-top:2px">總遊玩時間</div>
+      </div>
+      <div>
+        <div style="font-size:1.3rem;font-weight:bold;color:#aaa">${totLines.toLocaleString()}</div>
+        <div style="font-size:.65rem;color:#555;letter-spacing:1px;margin-top:2px">總消除行數</div>
+      </div>
+    </div>
+  </div>`;
+
+  content.innerHTML = header + rows + footer;
+}
+
+function hideLeaderboard(){
+  document.getElementById('leaderboardOverlay').style.display='none';
+}
+
+// ── 留言板 ────────────────────────────────────
+async function showMessageBoard(){
+  const ov = document.getElementById('messageBoardOverlay');
+  ov.style.display = 'flex';
+  const inp = document.getElementById('msgInput');
+  if(playerName) inp.placeholder = playerName + '：說點什麼...';
+  await loadMessages();
+}
+async function loadMessages(){
+  const content = document.getElementById('mbContent');
+  content.innerHTML = '<div style="text-align:center;color:#555;padding:30px;font-size:.9rem">載入中...</div>';
+  const r = await gasGet('getMessages');
+  if(!r || r.error || !r.data){ content.innerHTML = '<div style="text-align:center;color:#f44;padding:30px">載入失敗</div>'; return; }
+  if(!r.data.length){ content.innerHTML = '<div style="text-align:center;color:#555;padding:30px">尚無留言，第一個留言吧！</div>'; return; }
+  content.innerHTML = r.data.map(m=>{
+    const d = new Date(m.time);
+    const ts = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const isMe = m.name === playerName;
+    return `<div style="padding:10px 14px;background:${isMe?'rgba(100,100,200,0.1)':'rgba(255,255,255,0.03)'};border:1px solid ${isMe?'rgba(140,140,255,0.25)':'rgba(255,255,255,0.07)'};border-radius:8px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="color:#88aaff;font-size:.78rem;font-weight:bold">${m.name}</span>
+        <span style="color:#333;font-size:.68rem">${ts}</span>
+      </div>
+      <div style="color:#ccc;font-size:.84rem;line-height:1.5;word-break:break-all">${String(m.msg).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    </div>`;
+  }).join('');
+}
+async function sendMessage(){
+  const inp = document.getElementById('msgInput');
+  const msg = inp.value.trim();
+  if(!msg) return;
+  const name = playerName || '匿名';
+  const btn = document.getElementById('msgSendBtn');
+  btn.disabled=true; btn.textContent='送出中...';
+  const r = await gasPost({action:'postMessage', name, msg});
+  btn.disabled=false; btn.textContent='送出';
+  if(r && r.ok){ inp.value=''; await loadMessages(); }
+  else { btn.textContent='失敗'; setTimeout(()=>btn.textContent='送出',1500); }
+}
+function hideMessageBoard(){
+  document.getElementById('messageBoardOverlay').style.display='none';
+}
 let roCriticalBuffer = null, bossHitBuffer = null, missileDrumBuffer = null, boxingHitBuffer = null;
 const BOXING_HIT_B64 = 'boxing_hit.mp3';
 const playBoxingHitSnd = async () => {
@@ -1701,6 +1892,10 @@ function bossGameOver(){
   }
   // 確認死亡：強制刪除存檔，防止讀檔重試
   localStorage.removeItem('tetris_boss_save');
+  // 提交分數（以當前關卡計）
+  { const _elapsed = _bossStartTime ? Date.now()-_bossStartTime : modeTimer*1000;
+    submitBossScore(bm.currentStage, _elapsed, score, lines); }
+  stopHeartbeat();
   running=false;cancelAnimationFrame(raf);stopBGM();sndGameOver();vib([100,40,200]);
   bm.active=false;
   document.getElementById('bossTopBar').style.display='none';
@@ -1790,6 +1985,10 @@ function triggerCrossReviveEffect(){
 	            document.getElementById('finalTime').textContent = fmtTime(modeTimer);
 	            document.getElementById('finalDmg').textContent = bm.totalDmgDealt.toLocaleString();
 	            localStorage.removeItem('tetris_boss_save');
+	            // 提交排行榜分數
+	            const _elapsed = _bossStartTime ? Date.now()-_bossStartTime : modeTimer*1000;
+	            submitBossScore(bm.currentStage, _elapsed, score, lines);
+	            stopHeartbeat();
 	        }
 	    }
 
@@ -3034,6 +3233,9 @@ function startGame(){
   console.log("Starting game, mode:", curMode);
   
   if(curMode==='boss'){
+    if(!playerName){ showBossNameModal(); return; }
+    startHeartbeat();
+    _bossStartTime = Date.now();
     startBossMode();
     return;
   }
@@ -3146,6 +3348,23 @@ window.addEventListener('DOMContentLoaded',()=>{
   resize();updateBestDisplay();updateMusicBtn();
   loadPlayerData();loadGAWeights();
   loadBCModelFromStorage().then(ok=>{if(ok){const bb=document.getElementById('bcBattleBtn');if(bb)bb.disabled=false;}});
+
+  // ── 名稱 Modal 按鈕 ──
+  document.getElementById('bossStartConfirmBtn').addEventListener('click', confirmBossStart);
+  document.getElementById('bossNameCancelBtn').addEventListener('click', ()=>{ hideBossNameModal(); goMenu(); });
+  document.getElementById('bossLeaderboardInBtn').addEventListener('click', ()=>{ hideBossNameModal(); showLeaderboard(); });
+  document.getElementById('bossMessageInBtn').addEventListener('click', ()=>{ hideBossNameModal(); showMessageBoard(); });
+  document.getElementById('playerNameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') confirmBossStart(); });
+
+  // ── 排行榜 ──
+  document.getElementById('lbCloseBtn').addEventListener('click', hideLeaderboard);
+  document.getElementById('leaderboardOverlay').addEventListener('click', e=>{ if(e.target===e.currentTarget) hideLeaderboard(); });
+
+  // ── 留言板 ──
+  document.getElementById('mbCloseBtn').addEventListener('click', hideMessageBoard);
+  document.getElementById('messageBoardOverlay').addEventListener('click', e=>{ if(e.target===e.currentTarget) hideMessageBoard(); });
+  document.getElementById('msgSendBtn').addEventListener('click', sendMessage);
+  document.getElementById('msgInput').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
 });
 </script>
     <div id="bossEnding" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95); z-index:10000; flex-direction:column; align-items:center; justify-content:center; color:#fff; text-align:center; font-family:'Courier New',monospace;">
@@ -3158,4 +3377,42 @@ window.addEventListener('DOMContentLoaded',()=>{
         <button onclick="location.reload()" style="margin-top:40px; padding:15px 40px; font-size:1.3rem; background:linear-gradient(135deg, #ffd700, #ffa500); color:#000; border:none; border-radius:30px; cursor:pointer; font-weight:bold; box-shadow:0 0 20px rgba(255,215,0,0.4);">回到主選單</button>
     </div>
     
+<!-- BOSS 名稱輸入 Modal -->
+<div id="bossNameModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:500;flex-direction:column;align-items:center;justify-content:center;gap:14px;backdrop-filter:blur(10px);">
+  <div style="width:min(380px,92vw);display:flex;flex-direction:column;align-items:center;gap:12px;">
+    <div id="onlineBadge" style="background:rgba(0,50,0,0.8);border:1px solid #3a3;border-radius:20px;padding:6px 20px;font-size:0.8rem;color:#6f6;letter-spacing:2px;">● 0 人正在挑戰</div>
+    <div style="font-size:2.2rem;color:#f66;font-weight:bold;letter-spacing:4px;text-shadow:0 0 25px #f44;margin:6px 0">⚔ BOSS 闖關</div>
+    <div style="font-size:0.65rem;color:#666;letter-spacing:2px;margin-bottom:4px">42關生死挑戰・擊敗小怪與BOSS</div>
+    <input id="playerNameInput" type="text" maxlength="16" placeholder="輸入你的名稱" style="width:100%;padding:14px 16px;background:#111;border:2px solid #333;border-radius:10px;color:#fff;font-size:1rem;font-family:inherit;letter-spacing:2px;text-align:center;outline:none;box-sizing:border-box;transition:border-color .2s">
+    <button id="bossStartConfirmBtn" style="width:100%;padding:16px;background:linear-gradient(135deg,#1a7a1a,#2da82d);border:none;border-radius:10px;color:#fff;font-size:1.1rem;font-family:inherit;font-weight:bold;letter-spacing:3px;cursor:pointer;box-shadow:0 4px 20px rgba(0,180,0,0.3)">▶ 開始挑戰</button>
+    <button id="bossLeaderboardInBtn" style="width:100%;padding:13px;background:#111;border:1px solid #2a2a2a;border-radius:10px;color:#ffd700;font-size:0.95rem;font-family:inherit;letter-spacing:2px;cursor:pointer">🏆 排行榜</button>
+    <button id="bossMessageInBtn" style="width:100%;padding:13px;background:#111;border:1px solid #2a2a2a;border-radius:10px;color:#aaa;font-size:0.95rem;font-family:inherit;letter-spacing:2px;cursor:pointer">💬 留言板</button>
+    <button id="bossNameCancelBtn" style="background:none;border:none;color:#444;font-size:0.72rem;cursor:pointer;font-family:inherit;letter-spacing:1px;margin-top:2px">✕ 返回主選單</button>
+  </div>
+</div>
+<!-- 排行榜 Overlay -->
+<div id="leaderboardOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.96);z-index:501;flex-direction:column;align-items:center;padding:24px 16px;overflow-y:auto;backdrop-filter:blur(10px);">
+  <div style="width:min(500px,96vw);display:flex;flex-direction:column;gap:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="font-size:1.4rem;color:#ffd700;font-weight:bold;letter-spacing:3px;text-shadow:0 0 15px rgba(255,215,0,.4)">🏆 BOSS 排行榜</div>
+      <button id="lbCloseBtn" style="background:none;border:1px solid #333;border-radius:6px;color:#777;padding:6px 14px;cursor:pointer;font-family:inherit;font-size:.8rem">✕ 關閉</button>
+    </div>
+    <div style="font-size:0.6rem;color:#444;text-align:center;letter-spacing:1px;margin-bottom:4px">排序：關卡數↑ → 時間↓ → 分數↑</div>
+    <div id="lbContent" style="display:flex;flex-direction:column;gap:6px;min-height:120px"></div>
+  </div>
+</div>
+<!-- 留言板 Overlay -->
+<div id="messageBoardOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.96);z-index:501;flex-direction:column;align-items:center;padding:24px 16px;overflow-y:auto;backdrop-filter:blur(10px);">
+  <div style="width:min(500px,96vw);display:flex;flex-direction:column;gap:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="font-size:1.4rem;color:#88aaff;font-weight:bold;letter-spacing:3px">💬 留言板</div>
+      <button id="mbCloseBtn" style="background:none;border:1px solid #333;border-radius:6px;color:#777;padding:6px 14px;cursor:pointer;font-family:inherit;font-size:.8rem">✕ 關閉</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input id="msgInput" type="text" maxlength="80" placeholder="留下你的留言..." style="flex:1;padding:10px 14px;background:#111;border:1px solid #333;border-radius:8px;color:#fff;font-size:0.85rem;font-family:inherit;outline:none">
+      <button id="msgSendBtn" style="padding:10px 18px;background:rgba(40,40,120,0.8);border:1px solid #445;border-radius:8px;color:#aaf;font-family:inherit;cursor:pointer;white-space:nowrap;font-size:.85rem">送出</button>
+    </div>
+    <div id="mbContent" style="display:flex;flex-direction:column;gap:8px;min-height:120px"></div>
+  </div>
+</div>
 </body></html>
