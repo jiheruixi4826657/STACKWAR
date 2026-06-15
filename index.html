@@ -408,7 +408,7 @@ function showBossNameModal(){
     inp.style.borderColor = '#555';
     inp.style.color = '#aaa';
     if(hint){
-      hint.textContent = '✅ 已登記名稱，無法更改';
+      hint.innerHTML = '✅ 已登記名稱 &nbsp;<span onclick="resetPlayerName()" style="color:#f84;cursor:pointer;font-size:.68rem;text-decoration:underline">更換名稱</span>';
       hint.style.color = '#5a5';
     }
     if(btn0){
@@ -436,6 +436,12 @@ function hideBossNameModal(){
   document.getElementById('bossNameModal').style.display = 'none';
 }
 // ── 實際啟動 BOSS（共用路徑）──
+function resetPlayerName(){
+  if(!confirm('確定要更換名稱？\n原名稱將從本機清除，排行榜紀錄由管理員手動處理。')) return;
+  localStorage.removeItem('tetris_player_name');
+  playerName = '';
+  showBossNameModal();
+}
 function _doStartBoss(name){
   playerName = name;
   localStorage.setItem('tetris_player_name', name);
@@ -495,7 +501,7 @@ function confirmBossStart(){
       playerName = '';
     } else {
       // 名稱可用：向 GAS 登記
-      gasPost({action:'registerName', name});
+      gasGet('registerName&name='+encodeURIComponent(name));
     }
   });
   _doStartBoss(name);
