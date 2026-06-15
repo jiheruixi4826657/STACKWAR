@@ -497,7 +497,16 @@ async function confirmBossStart(){
   btn.textContent = '⏳ 驗證中...';
   if(hint){ hint.textContent = '正在確認名稱是否可用...'; hint.style.color = '#aaa'; }
 
-  const r = await gasGet('checkName&name='+encodeURIComponent(name));
+  // checkName（最多等 5 秒，超時視為可用）
+  let r;
+  try{
+    const ctrl = new AbortController();
+    const tid  = setTimeout(()=>ctrl.abort(), 5000);
+    const res  = await fetch(GAS_URL+'?action=checkName&name='+encodeURIComponent(name), {signal:ctrl.signal});
+    clearTimeout(tid);
+    r = await res.json();
+  }catch(e){ r = {}; }
+
   if(r && r.taken){
     // 名稱重複 → 擋住，讓玩家重新輸入
     inp.readOnly = false;
@@ -510,8 +519,8 @@ async function confirmBossStart(){
     btn.textContent = '▶ 開始挑戰';
     return;
   }
-  // 名稱可用 → 登記後進入
-  await gasGet('registerName&name='+encodeURIComponent(name));
+  // 名稱可用 → 背景登記，立即進入（不再等待）
+  gasGet('registerName&name='+encodeURIComponent(name));
   _doStartBoss(name);
 }
 
