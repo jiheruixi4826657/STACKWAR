@@ -456,7 +456,7 @@ function _doStartBoss(name){
 // ── 名稱確認狀態（0=初始, 1=等待二次確認）──
 let _nameConfirmPending = '';
 
-function confirmBossStart(){
+async function confirmBossStart(){
   const inp   = document.getElementById('playerNameInput');
   const btn   = document.getElementById('bossStartConfirmBtn');
   const hint  = document.getElementById('nameHint');
@@ -491,19 +491,27 @@ function confirmBossStart(){
     return;
   }
 
-  // ── 第二次點擊 → 直接存入並開始，查重背景處理 ──
+  // ── 第二次點擊 → 先查重，通過才登記並進入 ──
   _nameConfirmPending = '';
-  // 背景查重（不阻塞遊戲）
-  gasGet('checkName&name='+encodeURIComponent(name)).then(r=>{
-    if(r && r.taken){
-      // 名稱被搶用：清掉 localStorage 讓下次重新確認
-      localStorage.removeItem('tetris_player_name');
-      playerName = '';
-    } else {
-      // 名稱可用：向 GAS 登記
-      gasGet('registerName&name='+encodeURIComponent(name));
-    }
-  });
+  btn.disabled = true;
+  btn.textContent = '⏳ 驗證中...';
+  if(hint){ hint.textContent = '正在確認名稱是否可用...'; hint.style.color = '#aaa'; }
+
+  const r = await gasGet('checkName&name='+encodeURIComponent(name));
+  if(r && r.taken){
+    // 名稱重複 → 擋住，讓玩家重新輸入
+    inp.readOnly = false;
+    inp.value = '';
+    inp.style.borderColor = '#f44';
+    inp.focus();
+    if(hint){ hint.innerHTML = '❌ 此名稱已被使用，請重新輸入其他名稱'; hint.style.color = '#f55'; }
+    btn.disabled = false;
+    btn.style.background = 'linear-gradient(135deg,#1a7a1a,#2da82d)';
+    btn.textContent = '▶ 開始挑戰';
+    return;
+  }
+  // 名稱可用 → 登記後進入
+  await gasGet('registerName&name='+encodeURIComponent(name));
   _doStartBoss(name);
 }
 
