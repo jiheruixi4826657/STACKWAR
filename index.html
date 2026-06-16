@@ -3557,7 +3557,7 @@ function showLoginScreen(){
   const wp = document.getElementById('loginWelcomePanel');
   if(ip) ip.style.display = 'flex';
   if(wp) wp.style.display = 'none';
-  ['portCtrl','pbHardCorner'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');});
+  ['portCtrl','pbHardCorner','bossTopBar'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');});
   const ss = document.getElementById('startScreen');
   const ls = document.getElementById('loginScreen');
   if(ss) ss.style.display = 'none';
@@ -3577,7 +3577,7 @@ function showStartScreen(){
 }
 function showWelcomePage(){
   const ls = document.getElementById('loginScreen');
-  ['portCtrl','pbHardCorner'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');});
+  ['portCtrl','pbHardCorner','bossTopBar'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');});
   const ss = document.getElementById('startScreen');
   if(ss) ss.style.display = 'none';
   const ip = document.getElementById('loginInputPanel');
