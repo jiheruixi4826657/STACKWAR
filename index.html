@@ -42,6 +42,20 @@
         #deskL .mini-cvs { width: 45px !important; height: 45px !important; }
         #musicBtn { font-size: 0.45rem !important; padding: 2px !important; margin-top: 4px !important; }
 
+        /* 手機版：portRight 隱藏，HOLD 改為 deskR 流排列 */
+        #portRight { display: none !important; }
+        #portHoldBtn {
+            position: relative !important;
+            right: auto !important;
+            bottom: auto !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 52px;
+            margin-top: 4px;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
         /* 右側 BOSS 資訊卡與 NEXT */
         #deskR { width: 75px !important; }
         #deskRNorm { gap: 4px !important; }
@@ -63,7 +77,7 @@
             margin-bottom: 6px;
         }
         #mobileAtkBox {
-            display: none;
+            display: block;
             width: 100%;
             padding: 4px;
             margin-top: 5px;
@@ -383,7 +397,7 @@
         累計傷害：<span id="finalDmg" style="color:#f66;font-weight:bold">0</span>
     </div>
     <button class="btn" onclick="location.reload()" style="border-color:#ffd700;color:#ffd700;padding:15px 40px;font-size:1.2rem">回到主選單</button>
-</div><!-- Battle mode top HUD --><div id="battleTopHUD" style="display:none;position:fixed;top:0;left:0;right:0;height:38px;background:var(--panel);border-bottom:1px solid var(--border-w);align-items:center;justify-content:space-around;z-index:62;font-size:.65rem;padding:0 6px"><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#4af;font-size:.5rem">YOU</span><span style="color:#4af;font-weight:bold" id="bpScore">0</span></div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#fa0;font-size:.5rem">LINES</span><span style="color:#fa0" id="bpLines">0</span></div><div style="color:#ff0;font-weight:bold;font-size:.9rem" id="bTimer">2:00</div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#f66;font-size:.5rem">AI LINES</span><span style="color:#f66" id="baLines">0</span></div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#c04f;font-size:.5rem">AI</span><span style="color:#c040ff;font-weight:bold" id="baScore">0</span></div></div><!-- Portrait top HUD --><div id="mHUD"><div class="hv"><span class="hl">SCORE</span><b id="ms">0</b></div><div class="hv"><span class="hl">LV</span><b id="ml">1</b></div><div class="hv"><span class="hl">LINES</span><b id="mn">0</b></div><div class="hv"><span class="hl" id="mModeL">COMBO</span><b id="mModeVal" style="color:var(--c0)">-</b></div><div class="hv" style="cursor:pointer; padding: 0 10px; background: rgba(255,255,255,0.05); border-radius: 4px;" onclick="openPause()"><span class="hl">MENU</span><b style="color:#f66;font-size:1.1rem">⚙</b></div></div><!-- Portrait right panel --><div id="portRight"><div class="rlbl">NEXT</div><canvas id="nextP" width="56" height="168"></canvas><!-- HOLD: tappable area --><div id="portHoldBtn"><div class="hlbl">HOLD</div><canvas id="holdP" width="50" height="50"></canvas></div></div><!-- Portrait bottom bar --><div id="portCtrl"><button class="cb" id="pbL">◀<br><small>左移</small></button><button class="cb" id="pbSoft">▼<br><small>軟降</small></button><button class="cb" id="pbR">▶<br><small>右移</small></button></div><!-- Portrait hard drop corner --><div id="pbHardCorner"><div class="hdi">⬇</div><div class="hdt">瞬降</div></div><!-- Game area --><div id="blackoutOverlay"></div><div id="monsterTextOverlay"></div><div id="gameWrap" style="display:none"><div id="topMaskOverlay"></div><div id="holySwordOverlay"><div class="holy-sword">🗡️</div><div class="sword-impact"></div></div><div id="deskL"><div id="deskLStats" style="display:flex;flex-direction:column;gap:5px;width:100%"><div class="box hud-frame"><div class="lbl">HOLD</div><canvas class="mini-cvs" id="holdD" width="74" height="74"></canvas></div><div class="box" id="modeHUD"><div class="mhLbl" id="mhLbl">TIME</div><div class="mhVal normal" id="mhVal">--</div></div><div id="b2bBadge">B2B ×1</div><div class="box"><div class="lbl">SCORE</div><div class="val" id="scoreEl">0</div></div><div class="box"><div class="lbl">LEVEL</div><div class="val" id="levelEl">1</div></div><div class="box"><div class="lbl">LINES</div><div class="val" id="linesEl">0</div></div><div class="box"><div class="lbl">COMBO</div><div class="val" id="comboEl">-</div></div><button id="musicBtn" onclick="toggleBGM()">🎵 音樂</button>
+</div><!-- Battle mode top HUD --><div id="battleTopHUD" style="display:none;position:fixed;top:0;left:0;right:0;height:38px;background:var(--panel);border-bottom:1px solid var(--border-w);align-items:center;justify-content:space-around;z-index:62;font-size:.65rem;padding:0 6px"><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#4af;font-size:.5rem">YOU</span><span style="color:#4af;font-weight:bold" id="bpScore">0</span></div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#fa0;font-size:.5rem">LINES</span><span style="color:#fa0" id="bpLines">0</span></div><div style="color:#ff0;font-weight:bold;font-size:.9rem" id="bTimer">2:00</div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#f66;font-size:.5rem">AI LINES</span><span style="color:#f66" id="baLines">0</span></div><div style="display:flex;flex-direction:column;align-items:center"><span style="color:#c04f;font-size:.5rem">AI</span><span style="color:#c040ff;font-weight:bold" id="baScore">0</span></div></div><!-- Portrait top HUD --><div id="mHUD"><div class="hv"><span class="hl">SCORE</span><b id="ms">0</b></div><div class="hv"><span class="hl">LV</span><b id="ml">1</b></div><div class="hv"><span class="hl">LINES</span><b id="mn">0</b></div><div class="hv"><span class="hl" id="mModeL">COMBO</span><b id="mModeVal" style="color:var(--c0)">-</b></div><div class="hv" style="cursor:pointer; padding: 0 10px; background: rgba(255,255,255,0.05); border-radius: 4px;" onclick="openPause()"><span class="hl">MENU</span><b style="color:#f66;font-size:1.1rem">⚙</b></div></div><!-- Portrait right panel --><div id="portRight"><div class="rlbl">NEXT</div><canvas id="nextP" width="56" height="168"></canvas></div><!-- Portrait bottom bar --><div id="portCtrl"><button class="cb" id="pbL">◀<br><small>左移</small></button><button class="cb" id="pbSoft">▼<br><small>軟降</small></button><button class="cb" id="pbR">▶<br><small>右移</small></button></div><!-- Portrait hard drop corner --><div id="pbHardCorner"><div class="hdi">⬇</div><div class="hdt">瞬降</div></div><!-- Game area --><div id="blackoutOverlay"></div><div id="monsterTextOverlay"></div><div id="gameWrap" style="display:none"><div id="topMaskOverlay"></div><div id="holySwordOverlay"><div class="holy-sword">🗡️</div><div class="sword-impact"></div></div><div id="deskL"><div id="deskLStats" style="display:flex;flex-direction:column;gap:5px;width:100%"><div class="box hud-frame"><div class="lbl">HOLD</div><canvas class="mini-cvs" id="holdD" width="74" height="74"></canvas></div><div class="box" id="modeHUD"><div class="mhLbl" id="mhLbl">TIME</div><div class="mhVal normal" id="mhVal">--</div></div><div id="b2bBadge">B2B ×1</div><div class="box"><div class="lbl">SCORE</div><div class="val" id="scoreEl">0</div></div><div class="box"><div class="lbl">LEVEL</div><div class="val" id="levelEl">1</div></div><div class="box"><div class="lbl">LINES</div><div class="val" id="linesEl">0</div></div><div class="box"><div class="lbl">COMBO</div><div class="val" id="comboEl">-</div></div><button id="musicBtn" onclick="toggleBGM()">🎵 音樂</button>
 <div id="mobileAtkBox">
     <div class="lbl">ATK</div>
     <div id="mAtkVal" class="val">100%</div>
@@ -408,7 +422,8 @@
         <div class="m-cards" id="mbCards">無卡片</div>
     </div>
     <div class="box hud-frame"><div class="lbl">NEXT</div><canvas class="mini-cvs" id="nextD" width="74" height="370"></canvas></div>
-    <div class="box"><div class="lbl">ATK</div><div class="val" id="atkVal">100%</div></div>
+    <div id="portHoldBtn"><div class="hlbl">HOLD</div><canvas id="holdP" width="50" height="50"></canvas></div>
+    
     <div class="box" id="modeEl" style="display:none"></div>
 </div></div><!-- BOSS 狀態面板移至最右側 --><div id="deskLBossCards"><div style="font-size:0.8rem;color:#ffd700;border-bottom:1px solid #442;padding-bottom:5px;margin-bottom:8px;text-align:center">已獲卡片</div><div id="bmCards" style="font-size:0.75rem;color:#aaa;line-height:1.6;min-height:1.2em"></div></div>
 <div id="deskRBoss">
@@ -3389,6 +3404,8 @@ function startBossMode(isLoad){ if(!isLoad && loadBossProgress()) return;
   bm.smallMonsterOrder=genSmallMonsterOrder();
   fillNext();spawnNext();
   running=true;paused=false;lastTs=performance.now();
+  
+  ['portCtrl','pbHardCorner'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.removeProperty('display');});
   document.getElementById('gameWrap').style.display='';
   document.getElementById('gearBtn').style.display='block';
   updateMusicBtn();updateHoldBtn();ac();resize();updateUI();
@@ -3540,6 +3557,7 @@ function showLoginScreen(){
   const wp = document.getElementById('loginWelcomePanel');
   if(ip) ip.style.display = 'flex';
   if(wp) wp.style.display = 'none';
+  ['portCtrl','pbHardCorner'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');});
   const ss = document.getElementById('startScreen');
   const ls = document.getElementById('loginScreen');
   if(ss) ss.style.display = 'none';
@@ -3559,6 +3577,7 @@ function showStartScreen(){
 }
 function showWelcomePage(){
   const ls = document.getElementById('loginScreen');
+  ['portCtrl','pbHardCorner'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');});
   const ss = document.getElementById('startScreen');
   if(ss) ss.style.display = 'none';
   const ip = document.getElementById('loginInputPanel');
