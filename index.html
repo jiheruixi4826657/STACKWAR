@@ -2166,9 +2166,10 @@ function triggerCrossReviveEffect(){
 	            document.getElementById('finalTime').textContent = fmtTime(modeTimer);
 	            document.getElementById('finalDmg').textContent = bm.totalDmgDealt.toLocaleString();
 	            localStorage.removeItem('tetris_boss_save');
-	            // 提交排行榜分數
-	            const _elapsed = _bossStartTime ? Date.now()-_bossStartTime : modeTimer*1000;
-	            submitBossScore(bm.stage, _elapsed, score, lines);
+		            // 提交排行榜分數
+		            // 修正：modeTimer 本身即為毫秒，不應再乘以 1000
+		            const _elapsed = modeTimer; 
+		            submitBossScore(bm.stage, _elapsed, score, lines);
 	            stopHeartbeat();
 	        }
 	    }
