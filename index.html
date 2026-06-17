@@ -3802,7 +3802,7 @@ function renderLeaderboard(cont, tab, data){
       cells = `<div style="display:grid;grid-template-columns:28px 1fr 48px 60px 52px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
         <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
         <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
-        <div style="text-align:center"><span style="color:#4af;font-size:.9rem;font-weight:bold">Lv${Math.min(d.level||1, 99)}</span></div>
+        <div style="text-align:center"><span style="color:#4af;font-size:.9rem;font-weight:bold">Lv${(d.level >= 1 && d.level <= 99) ? d.level : '?'}</span></div>
         <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
         <div style="text-align:right;font-size:.65rem;color:#666">${(d.score||0).toLocaleString()}</div>
       </div>`;
