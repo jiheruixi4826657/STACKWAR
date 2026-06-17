@@ -355,7 +355,7 @@
 
   <!-- 全體統計 -->
   <div style="width:min(420px,96vw);background:#060610;border:1px solid #1a1a3a;border-radius:10px;padding:12px 14px">
-    <div style="font-size:.58rem;color:#3a3a6a;letter-spacing:2px;margin-bottom:8px;text-align:center">此紀錄為自動升級 + 衝分 + 極速40行 + Boss 四個模式合計</div>
+    <div style="font-size:.58rem;color:#3a3a6a;letter-spacing:2px;margin-bottom:8px;text-align:center">此紀錄為除 AI 對戰以外合計</div>
     <div style="display:flex;justify-content:space-around;text-align:center">
       <div><div id="globalTotScore" style="font-size:1rem;color:#ffd700;font-weight:bold;letter-spacing:1px">--</div><div style="font-size:.55rem;color:#444;margin-top:2px">總得分</div></div>
       <div><div id="globalTotLines" style="font-size:1rem;color:#4af;font-weight:bold;letter-spacing:1px">--</div><div style="font-size:.55rem;color:#444;margin-top:2px">總消行</div></div>
@@ -2934,7 +2934,7 @@ function fmtMs(ms){const s=Math.floor(ms/1000),cs=Math.floor((ms%1000)/10);retur
 function fmtTime(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60);return`${m}:${String(s%60).padStart(2,'0')}`;}
 function setGoScreen(title,col,det,best){const t=document.getElementById('goTitle');t.textContent=title;t.style.color=col;t.style.textShadow=`0 0 14px ${col}`;t.style.fontSize='clamp(1rem,5vw,1.6rem)';document.getElementById('goDetails').innerHTML=det;document.getElementById('goBest').textContent=best;document.getElementById('goScreen').classList.remove('hidden');}
 function sprintFinish(){running=false;cancelAnimationFrame(raf);stopBGM();gameCount++;savePlayerData();submitModeScoreSprint(modeTimer);sndGoal();vib([30,10,60,10,100]);const prev=bestTimes.sprint;if(!prev||modeTimer<prev)bestTimes.sprint=modeTimer;saveStore();setGoScreen('CLEAR!','#0f0',`時間：${fmtMs(modeTimer)}<br>分數：${score.toLocaleString()}`,prev&&modeTimer<prev?`🏆 新紀錄！(舊 ${fmtMs(prev)})`:bestTimes.sprint?`最佳：${fmtMs(bestTimes.sprint)}`:'');}
-function gameOver(){if(curMode==='battle'){battleEnd(false);return;}if(curMode==='boss'){bossGameOver();return;}gameCount++;savePlayerData();running=false;cancelAnimationFrame(raf);stopBGM();sndGameOver();vib([100,40,200]);if(score>bestScores[curMode])bestScores[curMode]=score;saveStore();if(curMode==='auto'){submitModeScoreAuto();}if(curMode==='score'&&_scoreComplete){submitModeScoreScore();}_scoreComplete=false;let det=`分數：${score.toLocaleString()}　行：${lines}　Lv${level}`;if(curMode==='score')det+=`<br>用時：${fmtTime(Math.min(modeTimer,180000))}`;if(curMode==='survival')det+=`<br>生存：${Math.floor(modeTimer/1000)}秒`;setGoScreen('GAME OVER','#f44',det,bestScores[curMode]>0?`最高分：${bestScores[curMode].toLocaleString()}`:'');}
+function gameOver(){if(curMode==='battle'){battleEnd(false);return;}if(curMode==='boss'){bossGameOver();return;}gameCount++;savePlayerData();running=false;cancelAnimationFrame(raf);stopBGM();sndGameOver();vib([100,40,200]);if(score>bestScores[curMode])bestScores[curMode]=score;saveStore();if(curMode==='auto'){submitModeScoreAuto();}if(curMode==='score'&&_scoreComplete){submitModeScoreScore();}if(curMode==='free'){submitModeScoreFree();}_scoreComplete=false;let det=`分數：${score.toLocaleString()}　行：${lines}　Lv${level}`;if(curMode==='score')det+=`<br>用時：${fmtTime(Math.min(modeTimer,180000))}`;if(curMode==='survival')det+=`<br>生存：${Math.floor(modeTimer/1000)}秒`;setGoScreen('GAME OVER','#f44',det,bestScores[curMode]>0?`最高分：${bestScores[curMode].toLocaleString()}`:'');}
 function triggerShake(intensity){
   mainCvs.classList.remove('shake');
   void mainCvs.offsetWidth;
@@ -3708,9 +3708,10 @@ let _currentLbTab = 'boss';
 
 const LB_SORT_HINTS = {
   boss  : '關卡數多 → 時間短 → 分數高　完整通關才上榜',
-  auto  : '等級高 → 分數高　死亡時上榜',
+  auto  : '等級高 → 消行多 → 分數高　死亡時上榜',
   score : '分數越高越前　3分鐘結束才上榜',
-  sprint: '時間越短越前　清滿40行才上榜'
+  sprint: '時間越短越前　清滿40行才上榜',
+  free  : '分數越高越前　遊戲結束時上榜'
 };
 
 async function showLeaderboard(tab){
@@ -3785,10 +3786,10 @@ function renderLeaderboard(cont, tab, data){
 
     let cells = '';
     if(tab === 'boss'){
-      const t = d.time || 0;
+      const t = Math.max(0, d.time || 0);
       const mm = Math.floor(t/60000);
       const ss2 = Math.floor((t%60000)/1000);
-      const timeStr = mm > 0 ? `${mm}分${ss2}秒` : `${ss2}秒`;
+      const timeStr = t === 0 ? '--' : mm > 0 ? `${mm}分${ss2}秒` : `${ss2}秒`;
       cells = `<div style="display:grid;grid-template-columns:28px 1fr 50px 75px 45px 52px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
         <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
         <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
@@ -3801,7 +3802,7 @@ function renderLeaderboard(cont, tab, data){
       cells = `<div style="display:grid;grid-template-columns:28px 1fr 48px 60px 52px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
         <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
         <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
-        <div style="text-align:center"><span style="color:#4af;font-size:.9rem;font-weight:bold">Lv${d.level||1}</span></div>
+        <div style="text-align:center"><span style="color:#4af;font-size:.9rem;font-weight:bold">Lv${Math.min(d.level||1, 99)}</span></div>
         <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
         <div style="text-align:right;font-size:.65rem;color:#666">${(d.score||0).toLocaleString()}</div>
       </div>`;
@@ -3836,6 +3837,11 @@ let _scoreComplete = false;  // true when score mode 3min ends naturally
 async function submitModeScoreAuto(){
   if(!playerName) return;
   await gasPost({action:'submitScore', mode:'auto', name:playerName, lines, score, level});
+}
+
+async function submitModeScoreFree(){
+  if(!playerName) return;
+  await gasPost({action:'submitScore', mode:'free', name:playerName, score, lines});
 }
 
 async function submitModeScoreScore(){
