@@ -3703,10 +3703,10 @@ function startGlobalStatsRefresh(){
 let _currentLbTab = 'boss';
 
 const LB_SORT_HINTS = {
-  boss  : '排序：關卡數↓ → 時間↑ → 分數↓',
-  auto  : '排序：消行數↓ → 分數↓　（死亡時提交）',
-  score : '排序：分數↓　（3分鐘計時完成時提交）',
-  sprint: '排序：時間↑（越短越好）　（清滿40行時提交）'
+  boss  : '關卡數多 → 時間短 → 分數高　完整通關才上榜',
+  auto  : '等級高 → 分數高　死亡時上榜',
+  score : '分數越高越前　3分鐘結束才上榜',
+  sprint: '時間越短越前　清滿40行才上榜'
 };
 
 async function showLeaderboard(tab){
@@ -3752,40 +3752,77 @@ function renderLeaderboard(cont, tab, data){
     cont.innerHTML = '<div style="color:#444;text-align:center;padding:20px">尚無紀錄</div>';
     return;
   }
+
+  // ── 欄位標題列 ──
+  let headerHtml = '';
+    if(tab === 'boss'){
+    headerHtml = `<div style="display:grid;grid-template-columns:28px 1fr 60px 75px 52px;gap:4px;padding:4px 10px;font-size:.55rem;color:#555;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:2px">
+      <span style="text-align:center">#</span><span>玩家</span><span style="text-align:center">關卡</span><span style="text-align:center">時間</span><span style="text-align:right">分數</span></div>`;
+  } else if(tab === 'auto'){
+    headerHtml = `<div style="display:grid;grid-template-columns:28px 1fr 48px 60px 52px;gap:4px;padding:4px 10px;font-size:.55rem;color:#555;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:2px">
+      <span style="text-align:center">#</span><span>玩家</span><span style="text-align:center">等級</span><span style="text-align:center">行數</span><span style="text-align:right">分數</span></div>`;
+  } else if(tab === 'score'){
+    headerHtml = `<div style="display:grid;grid-template-columns:28px 1fr 70px 48px;gap:4px;padding:4px 10px;font-size:.55rem;color:#555;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:2px">
+      <span style="text-align:center">#</span><span>玩家</span><span style="text-align:right">分數</span><span style="text-align:center">行數</span></div>`;
+  } else if(tab === 'sprint'){
+    headerHtml = `<div style="display:grid;grid-template-columns:28px 1fr 85px 48px;gap:4px;padding:4px 10px;font-size:.55rem;color:#555;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:2px">
+      <span style="text-align:center">#</span><span>玩家</span><span style="text-align:center">時間</span><span style="text-align:center">行數</span></div>`;
+  }
+
   const rows = data.map((d,i)=>{
     const rank = i+1;
     const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
     const isMe = d.name === playerName;
-    const bg = isMe ? 'rgba(40,80,160,0.2)' : (rank<=3 ? 'rgba(255,215,0,0.05)' : 'rgba(255,255,255,0.02)');
-    const border = isMe ? '1px solid #2a5a9a' : (rank<=3 ? '1px solid rgba(255,215,0,0.15)' : '1px solid rgba(255,255,255,0.05)');
+    const bg = isMe ? 'rgba(40,80,180,0.18)' : (rank<=3 ? 'rgba(255,215,0,0.05)' : (rank%2===0?'rgba(255,255,255,0.015)':'transparent'));
+    const border = isMe ? '1px solid rgba(80,140,255,0.5)' : (rank<=3 ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(255,255,255,0.04)');
+    const rankColor = rank===1?'#ffd700':rank===2?'#c0c0c0':rank===3?'#cd7f32':'#444';
+    const nameColor = isMe ? '#7ab4ff' : (rank<=3 ? '#fff' : '#bbb');
+    const meTag = isMe ? `<span style="font-size:.45rem;background:rgba(80,140,255,0.25);color:#7ab4ff;border:1px solid rgba(80,140,255,0.4);border-radius:3px;padding:1px 4px;margin-left:5px;vertical-align:middle">YOU</span>` : '';
 
-    let right = '';
+    let cells = '';
     if(tab === 'boss'){
       const t = d.time || 0;
-      const mm = String(Math.floor(t/60000)).padStart(2,'0');
-      const ss2 = String(Math.floor((t%60000)/1000)).padStart(2,'0');
-      right = `<div style="text-align:right"><div style="color:#ffd700;font-size:.85rem;font-weight:bold">第 ${d.stage||0} 關</div><div style="font-size:.65rem;color:#666">${mm}:${ss2} / ${(d.score||0).toLocaleString()}</div></div>`;
+      const mm = Math.floor(t/60000);
+      const ss2 = Math.floor((t%60000)/1000);
+      const timeStr = mm > 0 ? `${mm}分${ss2}秒` : `${ss2}秒`;
+      cells = `<div style="display:grid;grid-template-columns:28px 1fr 60px 75px 52px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
+        <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
+        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
+        <div style="text-align:center"><span style="color:#ffd700;font-size:.9rem;font-weight:bold">第${d.stage||0}關</span></div>
+        <div style="text-align:center;font-size:.72rem;color:#aaa;white-space:nowrap">${timeStr}</div>
+        <div style="text-align:right;font-size:.65rem;color:#666">${(d.score||0).toLocaleString()}</div>
+      </div>`;
     } else if(tab === 'auto'){
-      right = `<div style="text-align:right"><div style="color:#4af;font-size:.85rem;font-weight:bold">${(d.lines||0)} 行</div><div style="font-size:.65rem;color:#666">${(d.score||0).toLocaleString()} 分</div></div>`;
+      cells = `<div style="display:grid;grid-template-columns:28px 1fr 48px 60px 52px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
+        <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
+        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
+        <div style="text-align:center"><span style="color:#4af;font-size:.9rem;font-weight:bold">Lv${d.level||1}</span></div>
+        <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
+        <div style="text-align:right;font-size:.65rem;color:#666">${(d.score||0).toLocaleString()}</div>
+      </div>`;
     } else if(tab === 'score'){
-      right = `<div style="text-align:right"><div style="color:#f4a;font-size:.85rem;font-weight:bold">${(d.score||0).toLocaleString()} 分</div><div style="font-size:.65rem;color:#666">${(d.lines||0)} 行</div></div>`;
+      cells = `<div style="display:grid;grid-template-columns:28px 1fr 70px 48px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
+        <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
+        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
+        <div style="text-align:right"><span style="color:#ff66cc;font-size:.9rem;font-weight:bold">${(d.score||0).toLocaleString()}</span></div>
+        <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
+      </div>`;
     } else if(tab === 'sprint'){
       const t = d.time || 0;
-      const mm = String(Math.floor(t/60000)).padStart(2,'0');
+      const mm = Math.floor(t/60000);
       const ss2 = String(Math.floor((t%60000)/1000)).padStart(2,'0');
       const ms = String(Math.floor((t%1000)/10)).padStart(2,'0');
-      right = `<div style="text-align:right"><div style="color:#af4;font-size:.85rem;font-weight:bold">${mm}:${ss2}.${ms}</div><div style="font-size:.65rem;color:#666">${(d.lines||0)} 行</div></div>`;
+      const timeStr = mm > 0 ? `${mm}分${ss2}秒${ms}` : `${ss2}秒${ms}`;
+      cells = `<div style="display:grid;grid-template-columns:28px 1fr 85px 48px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
+        <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
+        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
+        <div style="text-align:center"><span style="color:#aaff44;font-size:.9rem;font-weight:bold;white-space:nowrap">${timeStr}</span></div>
+        <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
+      </div>`;
     }
-
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:${bg};border:${border};border-radius:8px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="font-size:.8rem;color:#555;min-width:22px;text-align:center">${medal||rank}</div>
-        <div style="font-size:.85rem;color:${isMe?'#8af':'#ccc'}">${d.name}</div>
-      </div>
-      ${right}
-    </div>`;
+    return cells;
   });
-  cont.innerHTML = rows.join('');
+  cont.innerHTML = headerHtml + rows.join('');
 }
 
 // ── Score submission ─────────────────────────────────────
@@ -3793,7 +3830,7 @@ let _scoreComplete = false;  // true when score mode 3min ends naturally
 
 async function submitModeScoreAuto(){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'auto', name:playerName, lines, score});
+  await gasPost({action:'submitScore', mode:'auto', name:playerName, lines, score, level});
 }
 
 async function submitModeScoreScore(){
@@ -3842,18 +3879,22 @@ function _goMenuPostProcess(){
 <!-- 排行榜 Overlay -->
 <div id="leaderboardOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.96);z-index:9200;flex-direction:column;align-items:center;padding:16px 12px;overflow-y:auto;backdrop-filter:blur(10px);">
   <div style="width:min(500px,96vw);display:flex;flex-direction:column;gap:10px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <div style="font-size:1rem;color:#ffd700;font-weight:bold;letter-spacing:2px;text-shadow:0 0 15px rgba(255,215,0,.4)">🏆 疊戰STACKWAR 全體玩家排行</div>
+    <!-- 標題列 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+      <div style="font-size:1.05rem;color:#ffd700;font-weight:bold;letter-spacing:2px;text-shadow:0 0 15px rgba(255,215,0,.4)">🏆 疊戰STACKWAR 全體玩家排行</div>
       <button onclick="hideLeaderboard()" style="background:none;border:1px solid #333;border-radius:6px;color:#777;padding:6px 14px;cursor:pointer;font-family:inherit;font-size:.8rem">✕ 關閉</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
-      <button class="lbtab" id="lbtab_boss"   onclick="switchLbTab('boss')"   style="padding:8px 4px;background:#1a1a0a;border:1px solid #5a4a00;border-radius:6px;color:#ffd700;font-size:.65rem;cursor:pointer;font-family:inherit;letter-spacing:1px">👹 Boss闖關</button>
-      <button class="lbtab" id="lbtab_auto"   onclick="switchLbTab('auto')"   style="padding:8px 4px;background:#0a0a1a;border:1px solid #1a1a5a;border-radius:6px;color:#888;font-size:.65rem;cursor:pointer;font-family:inherit;letter-spacing:1px">📈 自動升級</button>
-      <button class="lbtab" id="lbtab_score"  onclick="switchLbTab('score')"  style="padding:8px 4px;background:#0a0a1a;border:1px solid #1a1a5a;border-radius:6px;color:#888;font-size:.65rem;cursor:pointer;font-family:inherit;letter-spacing:1px">⏱ 衝分模式</button>
-      <button class="lbtab" id="lbtab_sprint" onclick="switchLbTab('sprint')" style="padding:8px 4px;background:#0a0a1a;border:1px solid #1a1a5a;border-radius:6px;color:#888;font-size:.65rem;cursor:pointer;font-family:inherit;letter-spacing:1px">🏃 極速40行</button>
+    <!-- Tab 按鈕 -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
+      <button class="lbtab" id="lbtab_boss"   onclick="switchLbTab('boss')"   style="padding:10px 4px;background:#1a1a0a;border:1px solid #5a4a00;border-radius:8px;color:#ffd700;font-size:.72rem;cursor:pointer;font-family:inherit;letter-spacing:1px;line-height:1.4">👹<br>Boss闖關</button>
+      <button class="lbtab" id="lbtab_auto"   onclick="switchLbTab('auto')"   style="padding:10px 4px;background:#0a0a1a;border:1px solid #1a1a5a;border-radius:8px;color:#888;font-size:.72rem;cursor:pointer;font-family:inherit;letter-spacing:1px;line-height:1.4">📈<br>自動升級</button>
+      <button class="lbtab" id="lbtab_score"  onclick="switchLbTab('score')"  style="padding:10px 4px;background:#0a0a1a;border:1px solid #1a1a5a;border-radius:8px;color:#888;font-size:.72rem;cursor:pointer;font-family:inherit;letter-spacing:1px;line-height:1.4">⏱<br>衝分模式</button>
+      <button class="lbtab" id="lbtab_sprint" onclick="switchLbTab('sprint')" style="padding:10px 4px;background:#0a0a1a;border:1px solid #1a1a5a;border-radius:8px;color:#888;font-size:.72rem;cursor:pointer;font-family:inherit;letter-spacing:1px;line-height:1.4">🏃<br>極速40行</button>
     </div>
-    <div id="lbSortHint" style="font-size:.58rem;color:#444;text-align:center;letter-spacing:1px"></div>
-    <div id="lbContent" style="display:flex;flex-direction:column;gap:6px;min-height:120px"></div>
+    <!-- 排序說明 -->
+    <div id="lbSortHint" style="font-size:.65rem;color:#666;text-align:center;letter-spacing:1px;padding:5px 8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:6px"></div>
+    <!-- 榜單內容 -->
+    <div id="lbContent" style="display:flex;flex-direction:column;gap:3px;min-height:120px"></div>
   </div>
 </div>
 <!-- 留言板 Overlay -->
