@@ -3895,6 +3895,8 @@ function renderLeaderboard(cont, tab, data){
     const rankColor = rank===1?'#ffd700':rank===2?'#c0c0c0':rank===3?'#cd7f32':'#444';
     const nameColor = isMe ? '#7ab4ff' : (rank<=3 ? '#fff' : '#bbb');
     const meTag = isMe ? `<span style="font-size:.45rem;background:rgba(80,140,255,0.25);color:#7ab4ff;border:1px solid rgba(80,140,255,0.4);border-radius:3px;padding:1px 4px;margin-left:5px;vertical-align:middle">YOU</span>` : '';
+    // 該場 T-Spin 次數（純顯示、不列入排序權重）
+    const tsSub = `<div style="font-size:.55rem;color:#c08aff;margin-top:1px;white-space:nowrap">🌀${d.tspins||0}</div>`;
 
     let cells = '';
     if(tab === 'boss'){
@@ -3908,7 +3910,7 @@ function renderLeaderboard(cont, tab, data){
         <div style="text-align:center"><span style="color:#ffd700;font-size:.85rem;font-weight:bold">第${d.stage||0}關</span></div>
         <div style="text-align:center;font-size:.72rem;color:#aaa;white-space:nowrap">${timeStr}</div>
         <div style="text-align:center;font-size:.72rem;color:#aaa">${d.lines||0}</div>
-        <div style="text-align:right;font-size:.65rem;color:#666">${(d.score||0).toLocaleString()}</div>
+        <div style="text-align:right"><div style="font-size:.65rem;color:#666">${(d.score||0).toLocaleString()}</div>${tsSub}</div>
       </div>`;
     } else if(tab === 'auto'){
       cells = `<div style="display:grid;grid-template-columns:28px 1fr 48px 60px 52px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
@@ -3916,13 +3918,13 @@ function renderLeaderboard(cont, tab, data){
         <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${lbCountry(d)}${meTag}</div>
         <div style="text-align:center"><span style="color:#4af;font-size:.9rem;font-weight:bold">Lv${(d.level >= 1 && d.level <= 99) ? d.level : '?'}</span></div>
         <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
-        <div style="text-align:right;font-size:.65rem;color:#666">${(d.score||0).toLocaleString()}</div>
+        <div style="text-align:right"><div style="font-size:.65rem;color:#666">${(d.score||0).toLocaleString()}</div>${tsSub}</div>
       </div>`;
     } else if(tab === 'score'){
       cells = `<div style="display:grid;grid-template-columns:28px 1fr 70px 48px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
         <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
         <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${lbCountry(d)}${meTag}</div>
-        <div style="text-align:right"><span style="color:#ff66cc;font-size:.9rem;font-weight:bold">${(d.score||0).toLocaleString()}</span></div>
+        <div style="text-align:right"><span style="color:#ff66cc;font-size:.9rem;font-weight:bold">${(d.score||0).toLocaleString()}</span>${tsSub}</div>
         <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
       </div>`;
     } else if(tab === 'sprint'){
@@ -3935,7 +3937,7 @@ function renderLeaderboard(cont, tab, data){
         <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
         <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${lbCountry(d)}${meTag}</div>
         <div style="text-align:center"><span style="color:#aaff44;font-size:.9rem;font-weight:bold;white-space:nowrap">${timeStr}</span></div>
-        <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
+        <div style="text-align:center"><div style="font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>${tsSub}</div>
       </div>`;
     } else if(tab === 'tspin'){
       cells = `<div style="display:grid;grid-template-columns:28px 1fr 90px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
@@ -3954,28 +3956,28 @@ let _scoreComplete = false;  // true when score mode 3min ends naturally
 
 async function submitModeScoreAuto(){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'auto', name:playerName, lines, score, level, country:playerCountry});
+  await gasPost({action:'submitScore', mode:'auto', name:playerName, lines, score, level, country:playerCountry, tspins:tspinCount});
 }
 
 async function submitModeScoreFree(){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'free', name:playerName, score, lines, country:playerCountry});
+  await gasPost({action:'submitScore', mode:'free', name:playerName, score, lines, country:playerCountry, tspins:tspinCount});
 }
 
 async function submitModeScoreScore(){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'score', name:playerName, score, lines, country:playerCountry});
+  await gasPost({action:'submitScore', mode:'score', name:playerName, score, lines, country:playerCountry, tspins:tspinCount});
 }
 
 async function submitModeScoreSprint(timeMs){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'sprint', name:playerName, time:timeMs, lines, country:playerCountry});
+  await gasPost({action:'submitScore', mode:'sprint', name:playerName, time:timeMs, lines, country:playerCountry, tspins:tspinCount});
 }
 
 // ── Boss submit (kept for compatibility) ─────────────────
 async function submitBossScore(stage, timeMs, sc, lns){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'boss', name:playerName, stage, time:timeMs, score:sc, lines:lns||0, country:playerCountry});
+  await gasPost({action:'submitScore', mode:'boss', name:playerName, stage, time:timeMs, score:sc, lines:lns||0, country:playerCountry, tspins:tspinCount});
 }
 
 // ── T-Spin 累計上傳（每局結算呼叫一次；伺服器端累加，不計入全體權重）──
