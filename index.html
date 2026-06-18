@@ -12,9 +12,13 @@
         box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);
     }
 .mcard{border:2px solid var(--border);background:var(--panel);border-radius:8px;padding:10px 8px;cursor:pointer;transition:border-color .15s,background .15s;text-align:center}.mcard:hover,.mcard.sel{border-color:var(--c0);background:#0d1a1a}.mcard.sel{box-shadow:0 0 12px rgba(0,232,232,.25)}.mcard .icon{font-size:1.6rem;margin-bottom:3px}.mcard .mname{font-size:.78rem;color:var(--c0);letter-spacing:2px;font-weight:bold}.mcard .mdesc{font-size:.52rem;color:#666;margin-top:3px;line-height:1.6}.mcard.sel .mdesc{color:#888}#diffRow{display:flex;align-items:center;gap:10px}#diffRow label{color:#888;font-size:.82rem}#diffSlider{width:120px;accent-color:var(--c0)}#diffVal{color:var(--c0);font-size:1rem;font-weight:bold;min-width:2ch}.hint{font-size:.6rem;color:#2a2a4a;text-align:center;line-height:2}.box{border:1px solid var(--border-w);background:var(--panel);border-radius:4px;padding:4px}.lbl{font-size:.52rem;color:var(--dim);letter-spacing:2px;margin-bottom:2px;text-align:center}.val{font-size:.9rem;color:var(--c0);text-align:center;font-weight:bold}.mini-cvs{display:block;margin:0 auto}#gameWrap{display:flex;align-items:center;justify-content:center;gap:5px;padding:3px;position:fixed;inset:0;overflow:hidden;touch-action:none;}
+    /* 遊戲內 HUD 只在遊玩時顯示，避免在登入／主選單畫面露出 */
+    body:not(.in-game) #mHUD,
+    body:not(.in-game) #portRight { display: none !important; }
+
     @media (max-width: 500px) {
-        #gameWrap { 
-            flex-direction: row !important; 
+        #gameWrap {
+            flex-direction: row !important;
             align-items: flex-start !important; 
             justify-content: center !important; 
             padding: 60px 5px 85px !important; 
@@ -286,6 +290,8 @@
     <input id="loginNameInput" type="text" maxlength="16" placeholder="輸入名稱（最多16字）"
       style="width:100%;padding:14px 16px;background:#111;border:2px solid #333;border-radius:10px;color:#fff;font-size:1rem;font-family:inherit;letter-spacing:2px;text-align:center;outline:none;box-sizing:border-box;transition:border-color .2s"
       onkeydown="if(event.key==='Enter')confirmLogin()">
+    <select id="loginCountrySelect"
+      style="width:100%;padding:13px 16px;background:#111;border:2px solid #333;border-radius:10px;color:#fff;font-size:.95rem;font-family:inherit;letter-spacing:1px;text-align:center;text-align-last:center;outline:none;box-sizing:border-box;cursor:pointer"></select>
     <div id="loginHint" style="font-size:.72rem;min-height:16px;letter-spacing:1px;color:#888;text-align:center"></div>
     <button id="loginConfirmBtn" onclick="confirmLogin()"
       style="width:100%;padding:16px;background:linear-gradient(135deg,#1a4a7a,#2a80d0);border:none;border-radius:10px;color:#fff;font-size:1.1rem;font-family:inherit;font-weight:bold;letter-spacing:3px;cursor:pointer;box-shadow:0 4px 20px rgba(40,120,200,0.3)">
@@ -298,6 +304,7 @@
   <div id="loginWelcomePanel" style="display:none;width:min(380px,92vw);display:none;flex-direction:column;align-items:center;gap:16px">
     <div style="color:#888;font-size:.75rem;letter-spacing:2px">歡迎回來</div>
     <div id="loginWelcomeName" style="font-size:clamp(1.2rem,5vw,1.8rem);color:#00e8e8;letter-spacing:4px;font-weight:bold;text-shadow:0 0 16px #00e8e8"></div>
+    <div id="loginWelcomeCountryRow" style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%"></div>
     <button onclick="showStartScreen()"
       style="width:100%;padding:16px;background:linear-gradient(135deg,#1a4a7a,#2a80d0);border:none;border-radius:10px;color:#fff;font-size:1.1rem;font-family:inherit;font-weight:bold;letter-spacing:3px;cursor:pointer;box-shadow:0 4px 20px rgba(40,120,200,0.3)">
       ▶ 開始遊戲
@@ -488,8 +495,26 @@
 // ══════════════════════════════════════════════
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyBxcE8EjsVJeqvJO0LaFlC_c3OTKqrJJm7nz9M5IGu9Vu8iIp7EW4ycx6sXvDOj8c/exec';
 let playerName = localStorage.getItem('tetris_player_name') || '';
+let playerCountry = localStorage.getItem('tetris_player_country') || '';
 let _heartbeatId = null;
 let _bossStartTime = 0;
+
+// ── 國家清單（手動選擇）──
+const COUNTRIES = [
+  ['🇹🇼','TAIWAN'],['🇨🇳','CHINA'],['🇭🇰','HONG KONG'],['🇲🇴','MACAU'],['🇯🇵','JAPAN'],
+  ['🇰🇷','KOREA'],['🇺🇸','USA'],['🇬🇧','UK'],['🇨🇦','CANADA'],['🇦🇺','AUSTRALIA'],
+  ['🇸🇬','SINGAPORE'],['🇲🇾','MALAYSIA'],['🇹🇭','THAILAND'],['🇻🇳','VIETNAM'],['🇵🇭','PHILIPPINES'],
+  ['🇮🇩','INDONESIA'],['🇮🇳','INDIA'],['🇩🇪','GERMANY'],['🇫🇷','FRANCE'],['🇮🇹','ITALY'],
+  ['🇪🇸','SPAIN'],['🇧🇷','BRAZIL'],['🇲🇽','MEXICO'],['🇷🇺','RUSSIA'],['🇳🇱','NETHERLANDS'],
+  ['🇸🇪','SWEDEN'],['🇵🇱','POLAND'],['🇹🇷','TURKEY'],['🇸🇦','SAUDI ARABIA'],['🇦🇪','UAE'],
+  ['🌍','OTHER']
+];
+function countryFlag(name){ const f=COUNTRIES.find(c=>c[1]===name); return f?f[0]:''; }
+function populateCountrySelect(sel, selected){
+  if(!sel) return;
+  sel.innerHTML = '<option value="" disabled '+(!selected?'selected':'')+'>🌐 選擇國家／地區</option>' +
+    COUNTRIES.map(c=>`<option value="${c[1]}" ${selected===c[1]?'selected':''}>${c[0]} ${c[1]}</option>`).join('');
+}
 
 async function gasGet(action){
   try{ const r=await fetch(GAS_URL+'?action='+action); return await r.json(); }catch(e){ return {error:e.message}; }
@@ -978,6 +1003,9 @@ const CARD_POOL=[
   {id:'timeBarrier',icon:'⏱',name:'時間壁壘',   desc:'反擊間隔+3秒（上限+12秒）',stackable:true},
 	  {id:'comboBurst', icon:'🔥',name:'連擊爆發',   desc:'Combo傷害倍率 +50%（限選一次）',unique:true},
 	  {id:'b2bEnhance', icon:'🌟',name:'B2B強化',    desc:'傷害x2倍（限選一次）',unique:true},
+  {id:'overdrive', icon:'⚡',name:'極速超載',   desc:'降落速度提升至LV12，分數×220%（限選一次）',unique:true},
+  {id:'grayCombo', icon:'⬛',name:'灰域連鎖',   desc:'所有方塊變灰，Combo傷害雙倍（限選一次）',unique:true},
+  {id:'goblinChest',icon:'👺',name:'神秘寶箱',   desc:'打開未知的寶箱，裡面可能有好東西…？'},
 ];
 const bm={
   active:false,stage:0,isBoss:false,
@@ -1002,6 +1030,7 @@ const bm={
   clearBonusMult:0,tspinBonusMult:0,tradeHoldActive:false,holdDisabled:false,
   allEnhanceClear:0,allEnhanceTspin:0,armorBreakMult:1.0,lineDmgBonus:0,
   ironWillCharges:0,counterDelayBonus:0,comboBurstBonus:0,b2bEnhanceActive:false,
+  cardScoreMult:1,dropLevelMin:0,grayPermanent:false,comboDoubleActive:false,
   counterLawCount:0,hasRevive:false,reviveUsed:false,
   stageDmgDealt:0,totalDmgDealt:0,stageStartTime:0,
   cardsAcquired:[],stagesCleared:0,
@@ -1836,6 +1865,7 @@ function bossDealDamage(rawScore,isTspin,isTetris,isAC,nLines){
   dmg+=bm.lineDmgBonus*nLines;
   if(bm.counterLawCount>0)dmg*=Math.pow(bm.isBoss?1.1:0.85,bm.counterLawCount);
   if(bm.comboBurstBonus>0&&combo>=1)dmg*=(1+bm.comboBurstBonus*combo);
+  if(bm.comboDoubleActive&&combo>=1)dmg*=(1+0.5*combo);
   if(b2b&&bm.b2bEnhanceActive)dmg*=2.0;
   if(bm.active && bm.comboOnlyTimer > 0 && combo < 2){
     dmg = 0; spawnDmgAnim('🛡️ Combo不足！','#fff');
@@ -2255,6 +2285,10 @@ function applyCard(card){
   else if(id==='timeBarrier'){bm.counterDelayBonus=Math.min(bm.counterDelayBonus+3000,12000);bm.COUNTER_BASE=5000+bm.counterDelayBonus;}
   else if(id==='comboBurst')bm.comboBurstBonus+=.5;
   else if(id==='b2bEnhance')bm.b2bEnhanceActive=true;
+  else if(id==='overdrive'){bm.dropLevelMin=12;level=Math.max(level,12);bm.cardScoreMult=2.2;spawnDmgAnim('⚡ 極速超載！分數×220%','#ff0');}
+  else if(id==='grayCombo'){bm.grayPermanent=true;bm.comboDoubleActive=true;spawnDmgAnim('⬛ 灰域連鎖：Combo傷害雙倍','#aaa');}
+  else if(id==='goblinChest'){spawnDmgAnim('👺 哥布林偷走了寶箱！','#8a8');}
+  if(id==='goblinChest')return;
   spawnDmgAnim(card.icon+' '+card.name,'#ffd700');
 }
 const KB_DEF={left:['ArrowLeft','KeyA'],right:['ArrowRight','KeyD'],rotCW:['ArrowUp','KeyX'],rotCCW:['KeyZ'],soft:['ArrowDown','KeyS'],hard:['Space'],hold:['KeyC','ShiftLeft','ShiftRight'],pause:['Escape']};
@@ -2277,7 +2311,25 @@ function snd1(){osc(180,'sawtooth',0,.04,.5,80);noise(0,.06,2400,2.5,.35);osc(12
 function snd2(){osc(60,'sawtooth',0,.12,.6,30);noise(0,.08,1800,3,.45);osc(400,'square',0,.1,.22,800,0);noise(.04,.1,4800,1.8,.25);}
 function snd3(){osc(40,'sawtooth',0,.4,.8,20);osc(80,'sawtooth',0,.35,.5,40,8);noise(0,.12,220,.8,.6);noise(0,.18,1200,2,.48);noise(.06,.22,5500,2.5,.32);osc(280,'square',.02,.3,.35,560,14);}
 function playSnd(ci){if(ci===0)snd1();else if(ci===1)snd2();else snd3();}
-function sndLock(isTspin){if(isTspin){noise(0,.08,3200,3,.4);osc(800,'sawtooth',0,.06,.3,200,0);osc(1600,'square',.03,.14,.2,3200,12);noise(.05,.15,600,1.5,.22);}else{osc(200,'sawtooth',0,.05,.35,80);noise(0,.06,1600,2,.28);}}
+function sndTspin(){
+  // ── 0~0.3s：旋轉能量蓄力（上升掃頻 + 緊張噪聲）──
+  osc(220,'sawtooth',0,.3,.16,1000,0);          // 主蓄力上升
+  osc(330,'square',0,.3,.10,1500,10);           // 諧波層次
+  osc(110,'sawtooth',0,.3,.08,520,6);           // 低頻底噪
+  noise(0,.3,900,1.0,.10);                       // 摩擦張力噪聲
+  noise(.15,.16,2200,1.6,.10);                   // 後段加速噪聲
+  // ── 0.3s：重擊落地（深沉貝斯衝擊 + 銳利瞬態）──
+  osc(140,'sawtooth',.3,.2,.6,40,0);            // 衝擊主體（音高驟降=拳擊感）
+  osc(60,'sine',.3,.38,.7,28,0);                // 深沉貝斯
+  noise(.3,.05,3800,2.2,.5);                     // 銳利瞬態
+  noise(.3,.2,300,.8,.42);                       // 厚重落地體
+  // ── 0.42~0.7s：勝利短音（明亮上行）──
+  osc(880,'square',.42,.1,.22,1320,0);
+  osc(1320,'sawtooth',.52,.12,.2,1760,0);
+  osc(1760,'square',.62,.16,.18,2640,0);
+  noise(.42,.12,5200,2,.12);                      // 高頻閃光
+}
+function sndLock(isTspin){if(isTspin){sndTspin();}else{osc(200,'sawtooth',0,.05,.35,80);noise(0,.06,1600,2,.28);}}
 function sndLvUp(){osc(220,'sawtooth',0,.05,.35,440);osc(440,'square',.04,.1,.25,880,0);noise(.02,.12,3600,2,.18);osc(880,'sawtooth',.08,.15,.2,1760,8);}
 function sndGoal(){osc(440,'sawtooth',0,.08,.4,880);noise(0,.1,4200,2.5,.3);osc(880,'square',.06,.12,.3,1760,0);osc(1760,'sawtooth',.12,.2,.25,3520,5);}
 function sndAllClear(){const fs=[110,147,175,220,294,349,440,587];fs.forEach((f,i)=>{osc(f,'sawtooth',i*.04,.35,.3+i*.015,f*2,0);});noise(0,.2,800,1.5,.4);noise(.15,.25,4800,2,.3);osc(880,'square',.38,.3,.25);}
@@ -2910,7 +2962,7 @@ function performClear(ca){
   }
   ca.n = actualN;
   const nForLogic = actualN;
-combo++;const atkLines=calcAtk(actualN,tspin,combo);totalAtk+=atkLines;if(atkLines>0&&curMode==='battle'){triggerPlayerAtk(actualN);if(ai.garbQ!==undefined)ai.garbQ+=atkLines;}lines+=actualN;const isSpec=isSpecialClear(actualN,tspin);const b2bBonus=b2b&&isSpec;let gained=calcScore(actualN,tspin,level);if(b2bBonus)gained=Math.floor(gained*1.5);if(isSpec){b2bCount=b2bBonus?b2bCount+1:1;}else{b2b=false;b2bCount=0;}b2b=isSpec;score+=gained;const isAC=board.slice(HIDDEN).every(r=>r.every(c=>!c));	  	  if(bm.active&&!bm.nextStageQueued) {
+combo++;const atkLines=calcAtk(actualN,tspin,combo);totalAtk+=atkLines;if(atkLines>0&&curMode==='battle'){triggerPlayerAtk(actualN);if(ai.garbQ!==undefined)ai.garbQ+=atkLines;}lines+=actualN;const isSpec=isSpecialClear(actualN,tspin);const b2bBonus=b2b&&isSpec;let gained=calcScore(actualN,tspin,level);if(b2bBonus)gained=Math.floor(gained*1.5);if(isSpec){b2bCount=b2bBonus?b2bCount+1:1;}else{b2b=false;b2bCount=0;}b2b=isSpec;score+=(bm.active&&bm.cardScoreMult>1?Math.round(gained*bm.cardScoreMult):gained);const isAC=board.slice(HIDDEN).every(r=>r.every(c=>!c));	  	  if(bm.active&&!bm.nextStageQueued) {
 		    bossDealDamage(gained,tspin==='full',actualN===4,isAC,actualN);
 		    saveBossProgress();
 		  }
@@ -2965,7 +3017,7 @@ function dcell(ctx2,px,py,col,alpha){
     drawCol = '#9b30ff';
     isFrozen = false;
   }
-  if(bm.active && bm.grayScaleTimer > 0){
+  if(bm.active && (bm.grayScaleTimer > 0 || bm.grayPermanent)){
     drawCol = '#888888';
     isFrozen = false;
   }
@@ -3305,7 +3357,7 @@ function loop(ts){raf=requestAnimationFrame(loop);if(!running||paused)return;con
   if(curMode==='battle')drawAI();
   if(clearAnim){clearAnim.timer+=dt;if(clearAnim.timer>=FLASH_MS){const ca=clearAnim;clearAnim=null;performClear(ca);}draw(dt);updateUI();return;}
   if(!cur)return;
-  const _cfg=diffCfg(level);
+  const _cfg=diffCfg(bm.active?Math.max(level,bm.dropLevelMin||0):level);
   const cfg={
     gravity: bm.active&&bm.speedBoostTimer>0 ? Math.max(16,Math.round(_cfg.gravity*.4)) : _cfg.gravity,
     lockDelay: _cfg.lockDelay,
@@ -3341,6 +3393,10 @@ function saveBossProgress() {
 	        counterDelayBonus: bm.counterDelayBonus,
 	        comboBurstBonus: bm.comboBurstBonus,
 	        b2bEnhanceActive: bm.b2bEnhanceActive,
+	        cardScoreMult: bm.cardScoreMult,
+	        dropLevelMin: bm.dropLevelMin,
+	        grayPermanent: bm.grayPermanent,
+	        comboDoubleActive: bm.comboDoubleActive,
 	        counterLawCount: bm.counterLawCount,
 	        hasRevive: bm.hasRevive,
 	        reviveUsed: bm.reviveUsed,
@@ -3378,6 +3434,10 @@ function loadBossProgress() {
             bm.counterDelayBonus = d.counterDelayBonus || 0;
             bm.comboBurstBonus = d.comboBurstBonus || 0;
             bm.b2bEnhanceActive = d.b2bEnhanceActive || false;
+            bm.cardScoreMult = d.cardScoreMult || 1;
+            bm.dropLevelMin = d.dropLevelMin || 0;
+            bm.grayPermanent = d.grayPermanent || false;
+            bm.comboDoubleActive = d.comboDoubleActive || false;
             bm.counterLawCount = d.counterLawCount || 0;
             bm.hasRevive = d.hasRevive || false;
             bm.reviveUsed = d.reviveUsed || false;
@@ -3424,6 +3484,7 @@ function startBossMode(isLoad){ if(!isLoad && loadBossProgress()) return;
   bm.allEnhanceClear=0;bm.allEnhanceTspin=0;bm.armorBreakMult=1.0;
   bm.lineDmgBonus=0;bm.ironWillCharges=0;bm.counterDelayBonus=0;
   bm.comboBurstBonus=0;bm.b2bEnhanceActive=false;bm.counterLawCount=0;
+  bm.cardScoreMult=1;bm.dropLevelMin=0;bm.grayPermanent=false;bm.comboDoubleActive=false;
   bm.hasRevive=false;bm.reviveUsed=false;bm.COUNTER_BASE=10000;
   bm.dmgAnims=[];bm.nextStageQueued=false;bm.clearBoardExitUsed=false;
   bm.smallMonsterOrder=genSmallMonsterOrder();
@@ -3583,6 +3644,7 @@ function showLoginScreen(){
   const wp = document.getElementById('loginWelcomePanel');
   if(ip) ip.style.display = 'flex';
   if(wp) wp.style.display = 'none';
+  populateCountrySelect(document.getElementById('loginCountrySelect'), playerCountry);
   ['portCtrl','pbHardCorner','bossTopBar'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.setProperty('display','none','important');});
   const ss = document.getElementById('startScreen');
   const ls = document.getElementById('loginScreen');
@@ -3614,8 +3676,31 @@ function showWelcomePage(){
   if(ip) ip.style.display = 'none';
   if(wp){ wp.style.display = 'flex'; }
   if(wn) wn.textContent = playerName;
+  renderWelcomeCountry();
   if(ls){ ls.style.display = 'flex'; ls.style.flexDirection = 'column'; }
   updateOnlineCount();
+}
+// 歡迎頁國家：已設定→顯示；舊用戶未設定→提供補選
+function renderWelcomeCountry(){
+  const row = document.getElementById('loginWelcomeCountryRow');
+  if(!row) return;
+  if(playerCountry){
+    row.innerHTML = `<div style="font-size:.95rem;color:#ffd700;letter-spacing:2px">${countryFlag(playerCountry)} ${playerCountry}</div>`;
+  } else {
+    row.innerHTML = `<div style="font-size:.7rem;color:#fa0;letter-spacing:1px">請補選你的國家／地區</div>
+      <select id="welcomeCountrySelect" style="width:100%;padding:11px 14px;background:#111;border:2px solid #5a4a00;border-radius:10px;color:#fff;font-size:.9rem;font-family:inherit;text-align:center;text-align-last:center;outline:none;box-sizing:border-box;cursor:pointer"></select>
+      <button onclick="saveWelcomeCountry()" style="padding:8px 22px;background:linear-gradient(135deg,#7a4a00,#d4860a);border:none;border-radius:8px;color:#fff;font-size:.8rem;font-family:inherit;letter-spacing:2px;cursor:pointer">儲存國家</button>`;
+    populateCountrySelect(document.getElementById('welcomeCountrySelect'), '');
+  }
+}
+function saveWelcomeCountry(){
+  const sel = document.getElementById('welcomeCountrySelect');
+  const c = sel ? sel.value : '';
+  if(!c){ if(sel) sel.style.borderColor='#f44'; return; }
+  playerCountry = c;
+  localStorage.setItem('tetris_player_country', c);
+  if(playerName) gasGet('registerName&name='+encodeURIComponent(playerName)+'&country='+encodeURIComponent(c));
+  renderWelcomeCountry();
 }
 
 
@@ -3624,11 +3709,20 @@ async function confirmLogin(){
   const btn  = document.getElementById('loginConfirmBtn');
   const hint = document.getElementById('loginHint');
   const name = inp ? inp.value.trim() : '';
+  const sel  = document.getElementById('loginCountrySelect');
+  const country = sel ? sel.value : '';
   if(!name){
     if(inp){ inp.style.borderColor='#f44'; inp.placeholder='請輸入名稱！'; }
     _loginConfirmPending = '';
     return;
   }
+  if(!country){
+    if(sel){ sel.style.borderColor='#f44'; }
+    if(hint){ hint.innerHTML='⚠️ 請先選擇國家／地區'; hint.style.color='#fa0'; }
+    _loginConfirmPending = '';
+    return;
+  }
+  if(sel) sel.style.borderColor='#333';
   if(_loginConfirmPending !== name){
     _loginConfirmPending = name;
     if(inp){ inp.readOnly = true; inp.style.borderColor = '#fa0'; }
@@ -3655,9 +3749,11 @@ async function confirmLogin(){
     return;
   }
   // register
-  gasGet('registerName&name='+encodeURIComponent(name));
+  gasGet('registerName&name='+encodeURIComponent(name)+'&country='+encodeURIComponent(country));
   playerName = name;
+  playerCountry = country;
   localStorage.setItem('tetris_player_name', name);
+  localStorage.setItem('tetris_player_country', country);
   startHeartbeat();
   showWelcomePage();
   startGlobalStatsRefresh();
@@ -3667,9 +3763,12 @@ async function changePlayerId(){
   if(!confirm('確定要更換名稱？\n原名稱將從名冊刪除，可重新自由註冊。')) return;
   const oldName = localStorage.getItem('tetris_player_name');
   localStorage.removeItem('tetris_player_name');
+  localStorage.removeItem('tetris_player_country');
   playerName = '';
+  playerCountry = '';
   if(oldName) gasGet('deleteName&name='+encodeURIComponent(oldName));
   // reset login form
+  populateCountrySelect(document.getElementById('loginCountrySelect'), '');
   const inp  = document.getElementById('loginNameInput');
   const btn  = document.getElementById('loginConfirmBtn');
   const hint = document.getElementById('loginHint');
@@ -3752,6 +3851,11 @@ async function switchLbTab(tab){
   renderLeaderboard(cont, tab, r.data);
 }
 
+function lbCountry(d){
+  const c = d.country || '';
+  if(!c) return '';
+  return `<span style="font-size:.62rem;color:#ffd700;margin-left:5px;letter-spacing:.5px">${countryFlag(c)}(${c})</span>`;
+}
 function renderLeaderboard(cont, tab, data){
   if(!data || data.length === 0){
     cont.innerHTML = '<div style="color:#444;text-align:center;padding:20px">尚無紀錄</div>';
@@ -3792,7 +3896,7 @@ function renderLeaderboard(cont, tab, data){
       const timeStr = t === 0 ? '--' : mm > 0 ? `${mm}分${ss2}秒` : `${ss2}秒`;
       cells = `<div style="display:grid;grid-template-columns:28px 1fr 50px 75px 45px 52px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
         <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
-        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
+        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${lbCountry(d)}${meTag}</div>
         <div style="text-align:center"><span style="color:#ffd700;font-size:.85rem;font-weight:bold">第${d.stage||0}關</span></div>
         <div style="text-align:center;font-size:.72rem;color:#aaa;white-space:nowrap">${timeStr}</div>
         <div style="text-align:center;font-size:.72rem;color:#aaa">${d.lines||0}</div>
@@ -3801,7 +3905,7 @@ function renderLeaderboard(cont, tab, data){
     } else if(tab === 'auto'){
       cells = `<div style="display:grid;grid-template-columns:28px 1fr 48px 60px 52px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
         <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
-        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
+        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${lbCountry(d)}${meTag}</div>
         <div style="text-align:center"><span style="color:#4af;font-size:.9rem;font-weight:bold">Lv${(d.level >= 1 && d.level <= 99) ? d.level : '?'}</span></div>
         <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
         <div style="text-align:right;font-size:.65rem;color:#666">${(d.score||0).toLocaleString()}</div>
@@ -3809,7 +3913,7 @@ function renderLeaderboard(cont, tab, data){
     } else if(tab === 'score'){
       cells = `<div style="display:grid;grid-template-columns:28px 1fr 70px 48px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
         <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
-        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
+        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${lbCountry(d)}${meTag}</div>
         <div style="text-align:right"><span style="color:#ff66cc;font-size:.9rem;font-weight:bold">${(d.score||0).toLocaleString()}</span></div>
         <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
       </div>`;
@@ -3821,7 +3925,7 @@ function renderLeaderboard(cont, tab, data){
       const timeStr = mm > 0 ? `${mm}分${ss2}秒${ms}` : `${ss2}秒${ms}`;
       cells = `<div style="display:grid;grid-template-columns:28px 1fr 85px 48px;gap:4px;align-items:center;padding:7px 10px;background:${bg};border:${border};border-radius:7px">
         <div style="text-align:center;font-size:.8rem;color:${rankColor};font-weight:bold">${medal||rank}</div>
-        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${meTag}</div>
+        <div style="font-size:.82rem;color:${nameColor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}${lbCountry(d)}${meTag}</div>
         <div style="text-align:center"><span style="color:#aaff44;font-size:.9rem;font-weight:bold;white-space:nowrap">${timeStr}</span></div>
         <div style="text-align:center;font-size:.72rem;color:#aaa">${(d.lines||0)} 行</div>
       </div>`;
@@ -3836,28 +3940,28 @@ let _scoreComplete = false;  // true when score mode 3min ends naturally
 
 async function submitModeScoreAuto(){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'auto', name:playerName, lines, score, level});
+  await gasPost({action:'submitScore', mode:'auto', name:playerName, lines, score, level, country:playerCountry});
 }
 
 async function submitModeScoreFree(){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'free', name:playerName, score, lines});
+  await gasPost({action:'submitScore', mode:'free', name:playerName, score, lines, country:playerCountry});
 }
 
 async function submitModeScoreScore(){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'score', name:playerName, score, lines});
+  await gasPost({action:'submitScore', mode:'score', name:playerName, score, lines, country:playerCountry});
 }
 
 async function submitModeScoreSprint(timeMs){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'sprint', name:playerName, time:timeMs, lines});
+  await gasPost({action:'submitScore', mode:'sprint', name:playerName, time:timeMs, lines, country:playerCountry});
 }
 
 // ── Boss submit (kept for compatibility) ─────────────────
 async function submitBossScore(stage, timeMs, sc, lns){
   if(!playerName) return;
-  await gasPost({action:'submitScore', mode:'boss', name:playerName, stage, time:timeMs, score:sc, lines:lns||0});
+  await gasPost({action:'submitScore', mode:'boss', name:playerName, stage, time:timeMs, score:sc, lines:lns||0, country:playerCountry});
 }
 
 // ── goMenu patch: show correct screen ────────────────────
